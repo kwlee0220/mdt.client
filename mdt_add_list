@@ -1,0 +1,77 @@
+# 초기 상태 확인
+mdt instance list
+
+# MDTI 등록 (vacuum)
+mdt instance add vacuum --jar fa3st-repository.jar --aas aas_vacuum.json --conf conf_vacuum.json
+mdt instance add vacuum --image mdt/faaast-service --aas aas_vacuum.json
+
+# 등록 확인
+mdt instance list
+mdt instance list -t
+mdt instance list -lt
+
+# MDTI 정보 확인
+mdt instance get vacuum
+mdt instance get vacuum -o json
+
+mdt aas get 'http://www.lg.co.kr/refrigerator/Innercase/VacuumFormer'
+
+# MDTI 구동
+mdt instance start vacuum -v
+
+# 실행 확인
+mdt instance list -lt
+mdt aas list -lt
+mdt aas get --id_short VacuumFormer
+mdt aas get --id_short VacuumFormer -o json
+mdt submodel get --id_short Data
+mdt submodel get --id_short Data -o json
+mdt submodel get --id_short Data -o tree
+
+
+# MDTI 등록 (inspection)
+mdt instance add inspection --jar fa3st-repository.jar --aas aas_inspection.json --conf conf_inspection.json
+mdt instance add inspection --image mdt/faaast-service --aas aas_inspection.json
+
+# 등록 확인
+mdt instance list -lt
+
+# MDTI 구동
+mdt instance start inspection -vv
+
+# 등록 확인
+mdt instance list -lt
+mdt instance get inspection
+mdt aas get --id_short QualityInspectionEquipment
+mdt aas get --id_short QualityInspectionEquipment -o json
+
+# MDTI 등록 (inspection)
+mdt instance add heater --jar fa3st-repository.jar --aas aas_heater.json --conf conf_heater.json
+mdt instance add piercing --jar fa3st-repository.jar --aas aas_piercing.json --conf conf_piercing.json
+mdt instance add innercase --jar fa3st-repository.jar --aas aas_innercase.json --conf conf_innercase.json
+
+mdt instance add heater --image mdt/faaast-service --aas aas_heater.json
+mdt instance add piercing --image mdt/faaast-service --aas aas_piercing.json
+mdt instance add innercase --image mdt/faaast-service --aas aas_innercase.json
+
+
+
+# 쉘 명령들과의 연동
+mdt instance list | awk -F '|' '{print $2}'
+mdt instance list -l | grep AI | awk -F '|' '{print $1}'
+
+
+
+
+
+# MDTI 등록 (vacuum)
+mdt instance add vacuum --image fraunhoferiosb/faaast-service --aas aas_vacuum.json
+
+
+ docker run fraunhoferiosb/faaast-service /bin/bash
+
+
+watch -t -n 1 mdt.sh instance list -lt
+watch -t -n 1 tree
+watch -t -n 1 'ps -af | grep fa3st-repository | grep -v grep | grep -v client'
+watch -n 1 -t 'jps | grep fa3st'
