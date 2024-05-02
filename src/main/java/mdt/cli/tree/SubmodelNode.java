@@ -36,7 +36,7 @@ public final class SubmodelNode implements Node {
 		
 		return FStream.from(attributes)
 					.concatWith(FStream.from(m_submodel.getSubmodelElements())
-							.map(sme -> SubmodelElementNodeFactory.toNode(sme)));
+							.map(sme -> SubmodelElementNodeFactory.toNode(sme, null)));
 	}
 	
 	private boolean isEmpty(Object obj) {

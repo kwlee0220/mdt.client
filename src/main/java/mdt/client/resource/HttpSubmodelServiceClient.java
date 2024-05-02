@@ -1,11 +1,12 @@
 package mdt.client.resource;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import javax.xml.datatype.Duration;
 
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
-import org.eclipse.digitaltwin.aas4j.v3.model.Endpoint;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationHandle;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationResult;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationVariable;
@@ -14,10 +15,8 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultOperationRequest;
 
 import mdt.client.Fa3stHttpClient;
-import mdt.client.Utils;
-import mdt.model.EndpointInterface;
 import mdt.model.registry.RegistryException;
-import mdt.model.resource.SubmodelService;
+import mdt.model.service.SubmodelService;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -34,11 +33,6 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 		super(client);
 		
 		m_url = url;
-	}
-
-	@Override
-	public Endpoint getEndpoint() {
-		return Utils.newEndpoint(m_url, EndpointInterface.SUBMODEL);
 	}
 	
 	@Override
@@ -70,7 +64,9 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 
 	@Override
 	public SubmodelElement getSubmodelElementByPath(String idShortPath) {
-		String url = String.format("%s/submodel-elements/%s", m_url, encodeBase64(idShortPath));
+//		String url = String.format("%s/submodel-elements/%s", m_url, encodeBase64(idShortPath));
+		idShortPath = URLEncoder.encode(idShortPath, StandardCharsets.UTF_8);
+		String url = String.format("%s/submodel-elements/%s", m_url, idShortPath);
 		
 		Request req = new Request.Builder().url(url).get().build();
 		return call(req, SubmodelElement.class);

@@ -1,11 +1,10 @@
 package mdt.model.repository;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 
-import mdt.model.resource.SubmodelService;
+import mdt.model.service.SubmodelService;
 
 /**
  *
@@ -13,9 +12,9 @@ import mdt.model.resource.SubmodelService;
  */
 public interface SubmodelRepository {
 	public List<SubmodelService> getAllSubmodels();
-	public Optional<SubmodelService> getSubmodelById(String id);
+	public SubmodelService getSubmodelById(String id);
 	public List<SubmodelService> getAllSubmodelBySemanticId(String semanticId);
-	public List<SubmodelService> getAllSubmodelByIdShort(String idShort);
+	public List<SubmodelService> getAllSubmodelsByIdShort(String idShort);
 	
 	public SubmodelService addSubmodel(Submodel submodel);
 	public SubmodelService updateSubmodelById(Submodel submodel);

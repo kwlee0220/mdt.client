@@ -18,7 +18,7 @@ import mdt.client.MDTClientConfig;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.repository.SubmodelRepository;
-import mdt.model.resource.SubmodelService;
+import mdt.model.service.SubmodelService;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Help.Ansi;

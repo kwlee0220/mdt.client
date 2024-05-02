@@ -15,7 +15,6 @@
         {
           "keys": [
             {
-              "idType": "Iri",
               "type": "Submodel",
               "value": "http://www.lg.co.kr/refrigerator/Innercase/InformationModel"
             }
@@ -24,7 +23,6 @@
         {
           "keys": [
             {
-              "idType": "Iri",
               "type": "Submodel",
               "value": "http://www.lg.co.kr/refrigerator/Innercase/Simulation/ProcessOptimization"
             }
@@ -33,7 +31,6 @@
         {
           "keys": [
             {
-              "idType": "Iri",
               "type": "Submodel",
               "value": "http://www.lg.co.kr/refrigerator/innercase/Behavior/ProcessOptimization"
             }

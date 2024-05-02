@@ -106,7 +106,7 @@ public class Utils {
 			Set<String> submodelIds = Sets.newHashSet();
 			for ( Submodel submodel: env.getSubmodels() ) {
 				if ( submodelIds.contains(submodel.getId()) ) {
-					throw new ResourceAlreadyExistsException("Duplicate Submodel: id=" + submodel.getId());
+					throw new ResourceAlreadyExistsException("Submodel", submodel.getId());
 				}
 				submodelIds.add(submodel.getId());
 			}
@@ -115,7 +115,7 @@ public class Utils {
 			for ( Reference ref: aas.getSubmodels() ) {
 				String refId = ref.getKeys().get(0).getValue();
 				if ( !submodelIds.contains(refId) ) {
-					throw new ResourceNotFoundException("Dangling Submodel Ref: " + refId);
+					throw new ResourceNotFoundException("Submodel", refId);
 				}
 			}
 			

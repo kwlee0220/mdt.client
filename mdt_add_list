@@ -2,8 +2,8 @@
 mdt instance list
 
 # MDTI 등록 (vacuum)
-mdt instance add vacuum --jar fa3st-repository.jar --aas aas_vacuum.json --conf conf_vacuum.json
-mdt instance add vacuum --image mdt/faaast-service --aas aas_vacuum.json
+mdt instance add vacuum --jar fa3st-repository.jar --model aas_vacuum.json --instance_conf conf_vacuum.json
+mdt instance add vacuum --image kwlee0220/faaast-service --model aas_vacuum.json --instance_conf conf_vacuum.json
 
 # 등록 확인
 mdt instance list
@@ -49,10 +49,12 @@ mdt aas get --id_short QualityInspectionEquipment -o json
 mdt instance add heater --jar fa3st-repository.jar --aas aas_heater.json --conf conf_heater.json
 mdt instance add piercing --jar fa3st-repository.jar --aas aas_piercing.json --conf conf_piercing.json
 mdt instance add innercase --jar fa3st-repository.jar --aas aas_innercase.json --conf conf_innercase.json
+mdt instance add welder --jar fa3st-repository.jar --aas aas_welder.json --conf conf_welder.json
 
 mdt instance add heater --image mdt/faaast-service --aas aas_heater.json
 mdt instance add piercing --image mdt/faaast-service --aas aas_piercing.json
 mdt instance add innercase --image mdt/faaast-service --aas aas_innercase.json
+mdt instance add welder --image kwlee0220/faaast-service --aas aas_welder.json --conf conf_welder.json
 
 
 
@@ -63,15 +65,27 @@ mdt instance list -l | grep AI | awk -F '|' '{print $1}'
 
 
 
-
-# MDTI 등록 (vacuum)
-mdt instance add vacuum --image fraunhoferiosb/faaast-service --aas aas_vacuum.json
+mdt property get http://www.lg.co.kr/refrigerator/Innercase/Welder/Data DataInfo
 
 
- docker run fraunhoferiosb/faaast-service /bin/bash
 
 
-watch -t -n 1 mdt.sh instance list -lt
-watch -t -n 1 tree
+cd /mnt/d/Dropbox/Temp/fa3st-repository
+java -jar /mnt/c/development/mdt/mdt.instance/build/libs/mdt.instance-0.0.1-all.jar
+
+mdt instance list -lt --repeat 1s            
+cd /mnt/d/Dropbox/Temp/mdt-instances;  watch -t -n 1 tree
+
+mdt property get http://www.lg.co.kr/refrigerator/Innercase/Welder/Data DataInfo --repeat 1s
+
+cd /mnt/d/Dropbox/Temp/fa3st-repository
+mdt instance add welder --jar fa3st-repository.jar --aas aas_welder.json --conf conf_welder.json
+
+cd /mnt/c/development/mdt/mdt.asset.welder; python scripts/publish_welder_currents.py 23.05.25.csv --sync
+mosquitto_sub -t "mdt/#"
+
+
 watch -t -n 1 'ps -af | grep fa3st-repository | grep -v grep | grep -v client'
 watch -n 1 -t 'jps | grep fa3st'
+
+docker run kwlee0220/faaast-service

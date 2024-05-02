@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
+import org.eclipse.digitaltwin.aas4j.v3.model.Endpoint;
 import org.eclipse.digitaltwin.aas4j.v3.model.Environment;
 
 import utils.stream.FStream;
@@ -12,6 +13,7 @@ import utils.stream.FStream;
 import mdt.client.HttpAASRESTfulClient;
 import mdt.client.HttpServiceFactory;
 import mdt.client.Utils;
+import mdt.client.registry.RegistryModelConverter;
 import mdt.model.instance.AddMDTInstancePayload;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
@@ -20,7 +22,11 @@ import mdt.model.instance.MDTInstancePayload;
 import mdt.model.instance.MDTInstanceStatus;
 import mdt.model.registry.AssetAdministrationShellRegistry;
 import mdt.model.registry.RegistryException;
+import mdt.model.registry.ResourceNotFoundException;
+import mdt.model.registry.ResourceNotReadyException;
 import mdt.model.registry.SubmodelRegistry;
+import mdt.model.service.AssetAdministrationShellService;
+import mdt.model.service.SubmodelService;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.Request;
@@ -154,7 +160,7 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient implement
 
     // @PostMapping({""})
 	@Override
-	public MDTInstance addInstance(String id, File aasFile, Object arguments)
+	public MDTInstance addInstance(String id, File aasFile, String arguments)
 		throws MDTInstanceManagerException {
 		try {
 			// AAS Environment 정의 파일을 읽어서 AAS Registry에 등록한다.
@@ -177,42 +183,29 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient implement
 	
 	private static final MediaType OCTET_TYPE = MediaType.parse("application/octet-stream");
 	private static final MediaType JSON_TYPE = MediaType.parse("text/json");
-	
-	public MDTInstance addJarInstance(String id, File jarFile, File modelFile, File confFile)
+	public MDTInstance addInstance(String id, String imageId, File jarFile, File modelFile, File confFile)
 		throws MDTInstanceManagerException {
-		RequestBody jarBody = RequestBody.create(OCTET_TYPE, jarFile);
-		RequestBody modelBody = RequestBody.create(JSON_TYPE, modelFile);
-		RequestBody confBody = RequestBody.create(JSON_TYPE, confFile);
-		RequestBody reqBody = new MultipartBody.Builder()
-									.setType(MultipartBody.FORM)
-									.addFormDataPart("id", id)
-									.addFormDataPart("model", "model.json", modelBody)
-									.addFormDataPart("jar", "fa3st-repository.jar", jarBody)
-									.addFormDataPart("conf", "conf.json", confBody)
-									.build();
-		String url = m_endpoint + "/jar";
-		Request req = new Request.Builder().url(url).post(reqBody).build();
-		MDTInstancePayload payload = (MDTInstancePayload)call(req, MDTInstancePayload.class);
-		
-		return new HttpMDTInstanceClient(getHttpClient(), toMDTInstanceEndpoint(m_baseUrl), payload);
-	}
-	
-	public MDTInstance addDockerInstance(String id, String imageId, File modelFile, File confFile)
-		throws MDTInstanceManagerException {
-		RequestBody modelBody = RequestBody.create(JSON_TYPE, modelFile);
-		MultipartBody.Builder reqBodyBuilder = new MultipartBody.Builder()
-													.setType(MultipartBody.FORM)
-													.addFormDataPart("id", id)
-													.addFormDataPart("imageId", imageId)
-													.addFormDataPart("model", "model.json", modelBody);
-		if ( confFile != null ) {
-			RequestBody confBody = RequestBody.create(JSON_TYPE, confFile);
-			reqBodyBuilder = reqBodyBuilder.addFormDataPart("conf", "conf.json", confBody);
+		MultipartBody.Builder builder = new MultipartBody.Builder()
+											.setType(MultipartBody.FORM)
+											.addFormDataPart("id", id);
+		if ( imageId != null ) {
+			builder = builder.addFormDataPart("imageId", imageId);
 		}
-		MultipartBody reqBody = reqBodyBuilder.build();
+		if ( jarFile != null ) {
+			builder = builder.addFormDataPart("jar", "fa3st-repository.jar",
+												RequestBody.create(jarFile, OCTET_TYPE));
+		}
+		if ( modelFile != null ) {
+			builder = builder.addFormDataPart("initialModel", "model.json",
+												RequestBody.create(modelFile, JSON_TYPE));
+		}
+		if ( confFile != null ) {
+			builder = builder.addFormDataPart("instanceConf", "conf.json",
+												RequestBody.create(confFile, JSON_TYPE));
+		}
+		RequestBody reqBody = builder.build();
 		
-		String url = m_endpoint + "/docker";
-		Request req = new Request.Builder().url(url).post(reqBody).build();
+		Request req = new Request.Builder().url(m_endpoint).post(reqBody).build();
 		MDTInstancePayload payload = (MDTInstancePayload)call(req, MDTInstancePayload.class);
 		
 		return new HttpMDTInstanceClient(getHttpClient(), toMDTInstanceEndpoint(m_baseUrl), payload);
@@ -232,6 +225,34 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient implement
 	public void removeInstanceAll() throws MDTInstanceManagerException {
 		Request req = new Request.Builder().url(m_endpoint).delete().build();
 		send(req);
+	}
+
+	@Override
+	public AssetAdministrationShellService getAssetAdministrationShellService(String aasId)
+		throws ResourceNotFoundException, ResourceNotReadyException, RegistryException {
+		List<Endpoint> eps = getAssetAdministrationShellRegistry()
+								.getAssetAdministrationShellDescriptorById(aasId)
+								.getEndpoints();
+		String endpoint = RegistryModelConverter.getEndpointString(eps);
+		if ( endpoint == null ) {
+			throw new ResourceNotReadyException("AssetAdministrationShell", aasId);
+		}
+		
+		return m_serviceFactory.getAssetAdministrationShellService(endpoint);
+	}
+
+	@Override
+	public SubmodelService getSubmodelService(String submodelId)
+		throws ResourceNotFoundException, ResourceNotReadyException, RegistryException {
+		List<Endpoint> eps = getSubmodelRegistry()
+								.getSubmodelDescriptorById(submodelId)
+								.getEndpoints();
+		String endpoint = RegistryModelConverter.getEndpointString(eps);
+		if ( endpoint == null ) {
+			throw new ResourceNotReadyException("Submodel", submodelId);
+		}
+		
+		return m_serviceFactory.getSubmodelService(endpoint);
 	}
 	
 	private String toMDTInstanceEndpoint(String endpoint) {

@@ -18,7 +18,7 @@ import picocli.CommandLine.Option;
 public abstract class MDTCommand extends HomeDirPicocliCommand {
 	private static final String ENVVAR_HOME = "MDT_HOME";
 	
-	@Option(names={"--config"}, paramLabel="path", description={"MDT management configuration file path"})
+	@Option(names={"--conf"}, paramLabel="path", description={"MDT management configuration file path"})
 	protected String m_configPath = "mdt_client_config.yaml";
 	
 	abstract protected void run(MDTClientConfig configs) throws Exception;

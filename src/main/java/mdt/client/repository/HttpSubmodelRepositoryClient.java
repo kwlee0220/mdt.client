@@ -1,7 +1,6 @@
 package mdt.client.repository;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
@@ -14,9 +13,8 @@ import mdt.client.Fa3stHttpClient;
 import mdt.client.Utils;
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.registry.RegistryException;
-import mdt.model.registry.ResourceNotFoundException;
 import mdt.model.repository.SubmodelRepository;
-import mdt.model.resource.SubmodelService;
+import mdt.model.service.SubmodelService;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -45,23 +43,18 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 	}
 	
 	@Override
-	public Optional<SubmodelService> getSubmodelById(String submodelId) {
+	public SubmodelService getSubmodelById(String submodelId) {
 		Preconditions.checkNotNull(submodelId);
 		
 		String url = String.format("%s/%s", m_url, encodeBase64(submodelId));
 		
 		Request req = new Request.Builder().url(url).get().build();
-		try {
-			Submodel submodel = call(req, Submodel.class);
-			return Optional.of((SubmodelService)toService(submodel));
-		}
-		catch ( ResourceNotFoundException e ) {
-			return Optional.empty();
-		}
+		Submodel submodel = call(req, Submodel.class);
+		return (SubmodelService)toService(submodel);
 	}
 	
 	@Override
-	public List<SubmodelService> getAllSubmodelByIdShort(String idShort) {
+	public List<SubmodelService> getAllSubmodelsByIdShort(String idShort) {
 		Preconditions.checkNotNull(idShort);
 		String url = String.format("%s?idShort=%s", m_url, idShort);
 		

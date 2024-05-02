@@ -28,6 +28,14 @@ public class HttpAASRegistryClient extends HttpRegistryClient implements AssetAd
 	}
 
 	@Override
+	public AssetAdministrationShellDescriptor getAssetAdministrationShellDescriptorById(String aasId) {
+		String url = String.format("%s/%s", m_endpoint, encodeBase64(aasId));
+		
+		Request req = new Request.Builder().url(url).get().build();
+		return call(req, AssetAdministrationShellDescriptor.class);
+	}
+
+	@Override
 	public List<AssetAdministrationShellDescriptor> getAllAssetAdministrationShellDescriptors()
 		throws RegistryException {
 		Request req = new Request.Builder().url(m_endpoint).get().build();
@@ -41,14 +49,6 @@ public class HttpAASRegistryClient extends HttpRegistryClient implements AssetAd
 		
 		Request req = new Request.Builder().url(url).get().build();
 		return callList(req, AssetAdministrationShellDescriptor.class);
-	}
-
-	@Override
-	public AssetAdministrationShellDescriptor getAssetAdministrationShellDescriptorById(String aasId) {
-		String url = String.format("%s/%s", m_endpoint, encodeBase64(aasId));
-		
-		Request req = new Request.Builder().url(url).get().build();
-		return call(req, AssetAdministrationShellDescriptor.class);
 	}
 
 	@Override

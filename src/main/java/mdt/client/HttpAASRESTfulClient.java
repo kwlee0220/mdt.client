@@ -12,6 +12,7 @@ import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
 
 import utils.func.Lazy;
 
+import mdt.model.InternalException;
 import mdt.model.MDTExceptionEntity;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;

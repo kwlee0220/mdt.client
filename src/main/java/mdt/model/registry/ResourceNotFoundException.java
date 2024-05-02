@@ -7,7 +7,7 @@ package mdt.model.registry;
 public class ResourceNotFoundException extends RegistryException {
     private static final long serialVersionUID = 1L;
 
-    public ResourceNotFoundException(final String message) {
-        super(message);
+    public ResourceNotFoundException(String resourceType, String resourceId) {
+        super(String.format("Resource(type=%s, id=%s)", resourceType, resourceId));
     }
 }

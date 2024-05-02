@@ -2,13 +2,9 @@ package mdt.client;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.List;
-
-import org.eclipse.digitaltwin.aas4j.v3.model.Endpoint;
 
 import mdt.client.registry.HttpAASRegistryClient;
 import mdt.client.registry.HttpSubmodelRegistryClient;
-import mdt.client.registry.RegistryModelConverter;
 import mdt.client.repository.HttpAASRepositoryClient;
 import mdt.client.repository.HttpSubmodelRepositoryClient;
 import mdt.client.resource.HttpAASServiceClient;
@@ -52,12 +48,12 @@ public class HttpServiceFactory implements ServiceFactory {
 	}
 
 	@Override
-	public HttpAASServiceClient getAssetAdministrationShellService(List<Endpoint> ep) {
-		return new HttpAASServiceClient(m_httpClient, RegistryModelConverter.getEndpointString(ep));
+	public HttpAASServiceClient getAssetAdministrationShellService(String endpoint) {
+		return new HttpAASServiceClient(m_httpClient, endpoint);
 	}
 
 	@Override
-	public HttpSubmodelServiceClient getSubmodelService(List<Endpoint> ep) {
-		return new HttpSubmodelServiceClient(m_httpClient, RegistryModelConverter.getEndpointString(ep));
+	public HttpSubmodelServiceClient getSubmodelService(String endpoint) {
+		return new HttpSubmodelServiceClient(m_httpClient, endpoint);
 	}
 }

@@ -12,7 +12,7 @@ import mdt.client.Utils;
 import mdt.client.resource.HttpAASServiceClient;
 import mdt.model.registry.RegistryException;
 import mdt.model.repository.AssetAdministrationShellRepository;
-import mdt.model.resource.AssetAdministrationShellService;
+import mdt.model.service.AssetAdministrationShellService;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;

@@ -1,8 +1,7 @@
 package mdt.cli;
 
 import org.slf4j.Logger;
-
-import utils.LoggerNameBuilder;
+import org.slf4j.LoggerFactory;
 
 import mdt.client.MDTClientConfig;
 import picocli.CommandLine;
@@ -18,10 +17,7 @@ import picocli.CommandLine.Option;
 @Command(name = "node_tracks_index",
 		description = "format node-tracks-index table.")
 public class MDTInstanceCommand extends MDTCommand {
-	private static final Logger s_logger = LoggerNameBuilder.from(MDTInstanceCommand.class)
-																.dropSuffix(2)
-																.append("format.node_tracks_index")
-																.getLogger();
+	private static final Logger s_logger = LoggerFactory.getLogger(MDTInstanceCommand.class); 
 	
 	private static final String DEFAULT_INDEX_TABLE_NAME = "node_tracks_index";
 	

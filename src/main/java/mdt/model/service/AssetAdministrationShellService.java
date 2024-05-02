@@ -1,4 +1,4 @@
-package mdt.model.resource;
+package mdt.model.service;
 
 import java.util.List;
 

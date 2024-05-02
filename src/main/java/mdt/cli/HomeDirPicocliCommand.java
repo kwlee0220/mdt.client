@@ -29,6 +29,9 @@ public abstract class HomeDirPicocliCommand implements Runnable, LoggerSettable 
 	@Spec protected CommandSpec m_spec;
 	@Mixin private UsageHelp m_help;
 	
+	@Option(names={"--working_dir", "-w"}, description="Use the current working directory for home directory")
+	private boolean m_useWorkingDir = false;
+	
 	private final FOption<String> m_homeDirEnvVarName;
 	private Path m_homeDir = null;
 	private Logger m_logger = s_logger;
@@ -37,23 +40,6 @@ public abstract class HomeDirPicocliCommand implements Runnable, LoggerSettable 
 	
 	protected HomeDirPicocliCommand(FOption<String> environVarName) {
 		m_homeDirEnvVarName = environVarName;
-	}
-	
-	public Path getHomeDir() {
-		if ( m_homeDir == null ) {
-			m_homeDir = m_homeDirEnvVarName
-								.flatMap(env -> FOption.ofNullable(System.getenv(env)))
-								.map(Paths::get)
-								.getOrElse(Utilities.getUserHomeDir().toPath());
-//								.getOrElse(Utilities.getCurrentWorkingDir().toPath());
-		}
-		
-		return m_homeDir;
-	}
-
-	@Option(names={"--home"}, paramLabel="path", description={"Home directory"})
-	public void setHomeDir(Path path) {
-		m_homeDir = path;
 	}
 	
 	@Override
@@ -68,6 +54,35 @@ public abstract class HomeDirPicocliCommand implements Runnable, LoggerSettable 
 		catch ( Exception e ) {
 			System.err.printf("failed: %s%n%n", e);
 		}
+	}
+	
+	public Path getHomeDir() {
+		if ( m_homeDir == null ) {
+			if ( m_homeDirEnvVarName.isPresent() ) {
+				String path = System.getenv(m_homeDirEnvVarName.get());
+				if ( path != null ) {
+					m_homeDir = Paths.get(path);
+				}
+			}
+		}
+		if ( m_homeDir == null ) {
+			if ( m_useWorkingDir ) {
+				m_homeDir = Utilities.getCurrentWorkingDir().toPath();
+			}
+			else {
+				m_homeDir = m_homeDirEnvVarName
+									.flatMap(env -> FOption.ofNullable(System.getenv(env)))
+									.map(Paths::get)
+									.getOrElse(Utilities.getUserHomeDir().toPath());
+			}
+		}
+		
+		return m_homeDir;
+	}
+
+	@Option(names={"--home"}, paramLabel="path", description={"Home directory"})
+	public void setHomeDir(Path path) {
+		m_homeDir = path;
 	}
 
 	@Override
@@ -94,7 +109,9 @@ public abstract class HomeDirPicocliCommand implements Runnable, LoggerSettable 
 	}
 
 	protected static final void runCommand(HomeDirPicocliCommand cmd, String[] args) throws Exception {
-		CommandLine commandLine = new CommandLine(cmd).setUsageHelpWidth(100);
+		CommandLine commandLine = new CommandLine(cmd)
+										.setUsageHelpWidth(100)
+										.setCaseInsensitiveEnumValuesAllowed(true);
 		try {
 			commandLine.parse(args);
 

@@ -8,8 +8,12 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 import mdt.model.registry.AssetAdministrationShellRegistry;
+import mdt.model.registry.RegistryException;
 import mdt.model.registry.ResourceNotFoundException;
+import mdt.model.registry.ResourceNotReadyException;
 import mdt.model.registry.SubmodelRegistry;
+import mdt.model.service.AssetAdministrationShellService;
+import mdt.model.service.SubmodelService;
 
 
 /**
@@ -17,8 +21,6 @@ import mdt.model.registry.SubmodelRegistry;
  * @author Kang-Woo Lee (ETRI)
  */
 public interface MDTInstanceManager {
-	public AssetAdministrationShellRegistry getAssetAdministrationShellRegistry();
-	public SubmodelRegistry getSubmodelRegistry();
 	
 	/**
 	 * 주어진 식별자에 해당하는 {@link MDTInstance} 객체를 반환한다.
@@ -67,6 +69,14 @@ public interface MDTInstanceManager {
 								.filter(inst -> inst.getStatus() == status)
 								.collect(Collectors.toList());
 	}
+	
+	public AssetAdministrationShellRegistry getAssetAdministrationShellRegistry();
+	public SubmodelRegistry getSubmodelRegistry();
+	
+	public AssetAdministrationShellService getAssetAdministrationShellService(String aasId)
+		throws ResourceNotFoundException, ResourceNotReadyException, RegistryException;
+	public SubmodelService getSubmodelService(String submodelId)
+		throws ResourceNotFoundException, ResourceNotReadyException, RegistryException;
 
 	/**
 	 * Docker에 저장된 image를 MDT instace로 등록시킨다.
@@ -82,7 +92,7 @@ public interface MDTInstanceManager {
 	 * @return 등록된 MDT Instace 객체.
 	 * @throws MDTInstanceManagerException	기타 다른 이유로 MDTInstance 등록에 실패한 경우.
 	 */
-	public MDTInstance addInstance(String id, File aasFile, Object arguments)
+	public MDTInstance addInstance(String id, File aasFile, String arguments)
 		throws MDTInstanceManagerException;
 	
 	/**

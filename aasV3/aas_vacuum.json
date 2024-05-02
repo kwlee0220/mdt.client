@@ -15,7 +15,6 @@
         {
           "keys": [
             {
-              "idType": "Iri",
               "type": "Submodel",
               "value": "http://www.lg.co.kr/refrigerator/Innercase/VacuumFormer/InformationModel"
             }
@@ -24,7 +23,6 @@
         {
           "keys": [
             {
-              "idType": "Iri",
               "type": "Submodel",
               "value": "http://www.lg.co.kr/refrigerator/Innercase/VacuumFormer/Data"
             }
@@ -35,45 +33,7 @@
         "revision": "",
         "version": ""
       },
-      "category": "CONSTANT",
-      "submodelRefs": [
-        {
-          "keys": [
-            {
-              "idType": "Custom",
-              "type": "Submodel",
-              "value": "http://www.lg.co.kr/refrigerator/Innercase/VacuumFormer/InformationModel"
-            }
-          ]
-        },
-        {
-          "keys": [
-            {
-              "idType": "Custom",
-              "type": "Submodel",
-              "value": "http://www.lg.co.kr/refrigerator/Innercase/VacuumFormer/Data"
-            }
-          ]
-        },
-        {
-          "keys": [
-            {
-              "idType": "Iri",
-              "type": "Submodel",
-              "value": "http://www.lg.co.kr/refrigerator/Innercase/VacuumFormer/InformationModel"
-            }
-          ]
-        },
-        {
-          "keys": [
-            {
-              "idType": "Iri",
-              "type": "Submodel",
-              "value": "http://www.lg.co.kr/refrigerator/Innercase/VacuumFormer/Data"
-            }
-          ]
-        }
-      ]
+      "category": "CONSTANT"
     }
   ],
   "conceptDescriptions": [],
@@ -83,9 +43,6 @@
       "idShort": "InformationModel",
       "id": "http://www.lg.co.kr/refrigerator/Innercase/VacuumFormer/InformationModel",
       "kind": "Instance",
-      "semanticId": {
-        "keys": []
-      },
       "administration": {
         "revision": "",
         "version": ""
@@ -95,9 +52,6 @@
         {
           "modelType": "SubmodelElementCollection",
           "kind": "Instance",
-          "semanticId": {
-            "keys": []
-          },
           "category": "",
           "idShort": "MDTInfo",
           "value": [
@@ -143,9 +97,6 @@
             {
               "modelType": "SubmodelElementCollection",
               "kind": "Instance",
-              "semanticId": {
-                "keys": []
-              },
               "category": "",
               "idShort": "AssetDescription",
               "value": [
@@ -219,9 +170,6 @@
             {
               "modelType": "SubmodelElementCollection",
               "kind": "Instance",
-              "semanticId": {
-                "keys": []
-              },
               "category": "",
               "idShort": "AsssetInformationInFactory",
               "value": [
@@ -301,9 +249,6 @@
       "idShort": "Data",
       "id": "http://www.lg.co.kr/refrigerator/Innercase/VacuumFormer/Data",
       "kind": "Instance",
-      "semanticId": {
-        "keys": []
-      },
       "administration": {
         "revision": "",
         "version": ""
@@ -313,9 +258,6 @@
         {
           "modelType": "SubmodelElementCollection",
           "kind": "Instance",
-          "semanticId": {
-            "keys": []
-          },
           "category": "",
           "idShort": "SubModelInfo",
           "value": [
@@ -517,9 +459,6 @@
             {
               "modelType": "SubmodelElementCollection",
               "kind": "Instance",
-              "semanticId": {
-                "keys": []
-              },
               "category": "",
               "idShort": "ReferenceAddress",
               "value": [
@@ -556,18 +495,12 @@
         {
           "modelType": "SubmodelElementCollection",
           "kind": "Instance",
-          "semanticId": {
-            "keys": []
-          },
           "category": "",
           "idShort": "DataInfo",
           "value": [
             {
               "modelType": "SubmodelElementCollection",
               "kind": "Instance",
-              "semanticId": {
-                "keys": []
-              },
               "category": "",
               "idShort": "Equipment",
               "value": [
@@ -821,10 +754,7 @@
                 {
                   "modelType": "SubmodelElementCollection",
                   "kind": "Instance",
-                  "semanticId": {
-                    "keys": []
-                  },
-                  "category": "",
+                  "category": "PARAMETER",
                   "idShort": "TaktTime",
                   "description": [
                     {
@@ -1007,10 +937,7 @@
                 {
                   "modelType": "SubmodelElementCollection",
                   "kind": "Instance",
-                  "semanticId": {
-                    "keys": []
-                  },
-                  "category": "",
+                  "category": "PARAMETER",
                   "idShort": "FaultRate",
                   "description": [
                     {
@@ -1193,10 +1120,7 @@
                 {
                   "modelType": "SubmodelElementCollection",
                   "kind": "Instance",
-                  "semanticId": {
-                    "keys": []
-                  },
-                  "category": "",
+                  "category": "PARAMETER",
                   "idShort": "SheetSurfaceTemperature",
                   "description": [
                     {
@@ -1379,10 +1303,7 @@
                 {
                   "modelType": "SubmodelElementCollection",
                   "kind": "Instance",
-                  "semanticId": {
-                    "keys": []
-                  },
-                  "category": "",
+                  "category": "PARAMETER",
                   "idShort": "CoolingWaterTemperature",
                   "description": [
                     {
@@ -1565,10 +1486,7 @@
                 {
                   "modelType": "SubmodelElementCollection",
                   "kind": "Instance",
-                  "semanticId": {
-                    "keys": []
-                  },
-                  "category": "",
+                  "category": "PARAMETER",
                   "idShort": "MoldInternalTemperature",
                   "description": [
                     {
@@ -1751,10 +1669,7 @@
                 {
                   "modelType": "SubmodelElementCollection",
                   "kind": "Instance",
-                  "semanticId": {
-                    "keys": []
-                  },
-                  "category": "",
+                  "category": "PARAMETER",
                   "idShort": "Pressure",
                   "description": [
                     {
@@ -1937,10 +1852,7 @@
                 {
                   "modelType": "SubmodelElementCollection",
                   "kind": "Instance",
-                  "semanticId": {
-                    "keys": []
-                  },
-                  "category": "",
+                  "category": "PARAMETER",
                   "idShort": "P4MotorVibration",
                   "description": [
                     {
@@ -2123,10 +2035,7 @@
                 {
                   "modelType": "SubmodelElementCollection",
                   "kind": "Instance",
-                  "semanticId": {
-                    "keys": []
-                  },
-                  "category": "",
+                  "category": "PARAMETER",
                   "idShort": "P5MotorVibration",
                   "description": [
                     {
@@ -2309,10 +2218,7 @@
                 {
                   "modelType": "SubmodelElementCollection",
                   "kind": "Instance",
-                  "semanticId": {
-                    "keys": []
-                  },
-                  "category": "",
+                  "category": "PARAMETER",
                   "idShort": "P6MotorVibration",
                   "description": [
                     {
@@ -2495,10 +2401,7 @@
                 {
                   "modelType": "SubmodelElementCollection",
                   "kind": "Instance",
-                  "semanticId": {
-                    "keys": []
-                  },
-                  "category": "",
+                  "category": "PARAMETER",
                   "idShort": "P7MotorVibration",
                   "description": [
                     {

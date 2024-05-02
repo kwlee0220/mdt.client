@@ -11,16 +11,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
  */
 public interface SubmodelRegistry {
 	/**
-	 * 등록된 모든 SubmodelDescriptor 들을 반환한다.
-	 * 
-	 * @return	SubmodelDescriptor 리스트.
-	 * @throws RegistryException	Descriptor 획득 과정 중 오류가 발생한 경우.
-	 */
-	public List<SubmodelDescriptor> getAllSubmodelDescriptors() throws RegistryException;
-	
-	public List<SubmodelDescriptor> getAllSubmodelDescriptorsByIdShort(String idShort);
-	
-	/**
 	 * 주어진 식별자에 해당하는 {@link SubmodelDescriptor}를 반환한다.
 	 * 
 	 * @param aasId	SubmodelDescriptor 식별자.
@@ -30,6 +20,17 @@ public interface SubmodelRegistry {
 	 */
 	public SubmodelDescriptor getSubmodelDescriptorById(String submodelId)
 		throws ResourceNotFoundException, RegistryException;
+	
+	public List<SubmodelDescriptor> getAllSubmodelDescriptorsByIdShort(String idShort);
+	
+	
+	/**
+	 * 등록된 모든 SubmodelDescriptor 들을 반환한다.
+	 * 
+	 * @return	SubmodelDescriptor 리스트.
+	 * @throws RegistryException	Descriptor 획득 과정 중 오류가 발생한 경우.
+	 */
+	public List<SubmodelDescriptor> getAllSubmodelDescriptors() throws RegistryException;
 	
 	/**
 	 * 주어진 SubmodelDescriptor를 등록시킨다.

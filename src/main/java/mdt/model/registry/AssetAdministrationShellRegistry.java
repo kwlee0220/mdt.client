@@ -26,9 +26,9 @@ public interface AssetAdministrationShellRegistry {
 	/**
 	 * 주어진 식별자에 해당하는 {@link AssetAdministrationShellDescriptor}를 반환한다.
 	 * 
-	 * @param aasId	AssetAdministrationShell 식별자.
-	 * @return	AssetAdministrationShell 객체
-	 * @throws ResourceNotFoundException	식별자에 해당하는 등록 AssetAdministrationShellDescriptor가 없는 경우
+	 * @param aasId		AssetAdministrationShell 식별자.
+	 * @return AssetAdministrationShellDescriptor 객체
+	 * @throws ResourceNotFoundException	식별자에 해당하는 등록 AssetAdministrationShellDescriptor가 없는 경우.
 	 * @throws RegistryException		Descriptor 획득 과정 중 오류가 발생한 경우.
 	 */
 	public AssetAdministrationShellDescriptor getAssetAdministrationShellDescriptorById(String aasId)

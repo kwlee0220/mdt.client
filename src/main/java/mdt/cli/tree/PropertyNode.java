@@ -19,7 +19,12 @@ public final class PropertyNode implements Node {
 
 	@Override
 	public String getText() {
-		return String.format("%s=%s", m_prop.getIdShort(), m_prop.getValue());
+		if ( m_prop.getValueType() != null ) {
+			return String.format("%s (%s): %s", m_prop.getIdShort(), m_prop.getValueType(), m_prop.getValue());
+		}
+		else {
+			return String.format("%s: %s", m_prop.getIdShort(), m_prop.getValue());
+		}
 	}
 
 	@Override

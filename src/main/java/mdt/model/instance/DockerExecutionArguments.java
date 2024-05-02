@@ -25,4 +25,5 @@ import lombok.NoArgsConstructor;
 public class DockerExecutionArguments {
 	@Nullable private String imageId;
 	@Nullable private String modelFile;
+	@Nullable private String configFile;
 }

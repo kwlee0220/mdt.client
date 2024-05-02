@@ -94,7 +94,8 @@ public class RegistryModelConverter {
 	public static String getEndpointString(Endpoint ep) {
 		Preconditions.checkNotNull(ep);
 		
-		return ep.getProtocolInformation().getHref();
+		String href = ep.getProtocolInformation().getHref();
+		return (href != null && href.length() > 0) ? href : null;
 	}
 	
 	public static @Nullable String getEndpointString(List<Endpoint> epList) {

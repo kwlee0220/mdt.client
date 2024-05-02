@@ -5,11 +5,8 @@ import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Preconditions;
-
 import mdt.client.MDTClientConfig;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
-import mdt.model.instance.MDTInstanceManagerException;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -22,23 +19,33 @@ import picocli.CommandLine.Parameters;
 @Command(name = "add", description = "Add an MDT instance.")
 public class AddMDTInstanceCommand extends MDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(AddMDTInstanceCommand.class);
+	
+	public static enum InstanceType {
+		JAR,
+		DOCKER,
+		KUBERNETES,
+	}
 
 	@Parameters(index="0", paramLabel="id", description="MDTInstance implementation jar file path")
 	private String m_id;
 	
+	@Option(names={"--type", "-t"}, paramLabel="type",
+			description="MDTInstance execution type: ${COMPLETION-CANDIDATES}")
+	private InstanceType m_type;
+	
 	@Option(names={"--jar"}, paramLabel="path",
-			description="Path to the MDTInstance implementation jar")
+			description="Path to the MDTInstance implementation jar (for JarInstance)")
 	private File m_jarFile;
 	
 	@Option(names={"--image"}, paramLabel="id",
-			description="Docker image id for the MDTInstance")
+			description="Docker image id for the MDTInstance (DockerInstance or KubernetesInstance)")
 	private String m_imageId;
 	
-	@Option(names={"--aas"}, paramLabel="path", required=true, description="AAS Environment JSON file path")
+	@Option(names={"--model"}, paramLabel="path", description="Initial AAS Environment file path")
 	private File m_aasFile;
 	
-	@Option(names={"--conf"}, paramLabel="path", description="MDTInstance configuration path")
-	private File m_confFile;
+	@Option(names={"--instance_conf"}, paramLabel="path", description="MDTInstance configuration path")
+	private File m_aasConf;
 
 	public AddMDTInstanceCommand() {
 		setLogger(s_logger);
@@ -47,22 +54,7 @@ public class AddMDTInstanceCommand extends MDTCommand {
 	@Override
 	public void run(MDTClientConfig configs) throws Exception {
 		HttpMDTInstanceManagerClient mgr = (HttpMDTInstanceManagerClient)createMDTInstanceManager(configs);
-		
-		if ( m_jarFile != null ) {
-			Preconditions.checkArgument(m_confFile != null, "Fa3st configuration file was missing");
-			
-			mgr.addJarInstance(m_id, m_jarFile, m_aasFile, m_confFile);
-		}
-		else if ( m_imageId != null ) {
-//			args = DockerExecutionArguments.builder()
-//											.imageId(m_imageId)
-//											.modelFile(m_aasFile.getAbsolutePath())
-//											.build();
-			mgr.addDockerInstance(m_id, m_imageId, m_aasFile, m_confFile);
-		}
-		else {
-			throw new MDTInstanceManagerException("invalid MDTInstance addition command");
-		}
+		mgr.addInstance(m_id, m_imageId, m_jarFile, m_aasFile, m_aasConf);
 	}
 
 	public static final void main(String... args) throws Exception {

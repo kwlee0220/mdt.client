@@ -15,7 +15,6 @@
         {
           "keys": [
             {
-              "idType": "Iri",
               "type": "Submodel",
               "value": "http://www.lg.co.kr/refrigerator/Innercase/QualityInspectionEquipment/InformationModel"
             }
@@ -24,7 +23,6 @@
         {
           "keys": [
             {
-              "idType": "Iri",
               "type": "Submodel",
               "value": "http://www.lg.co.kr/refrigerator/Innercase/QualityInspectionEquipment/Data"
             }
@@ -33,7 +31,6 @@
         {
           "keys": [
             {
-              "idType": "Iri",
               "type": "Submodel",
               "value": "http://www.lg.co.kr/refrigerator/Innercase/QualityInspectionEquipment/AI/SurfaceInspection"
             }
@@ -42,7 +39,6 @@
         {
           "keys": [
             {
-              "idType": "Iri",
               "type": "Submodel",
               "value": "http://www.lg.co.kr/refrigerator/Innercase/QualityInspectionEquipment/AI/ThicknessInspection"
             }
@@ -51,7 +47,6 @@
         {
           "keys": [
             {
-              "idType": "Iri",
               "type": "Submodel",
               "value": "http://www.lg.co.kr/refrigerator/Innercase/QualityInspectionEquipment/Simulation/ProcessSimulation"
             }
@@ -60,7 +55,6 @@
         {
           "keys": [
             {
-              "idType": "Iri",
               "type": "Submodel",
               "value": "http://www.lg.co.kr/refrigerator/Innercase/QualityInspectionEquipment/Behavior/ThichnessInspection"
             }
@@ -69,7 +63,6 @@
         {
           "keys": [
             {
-              "idType": "Iri",
               "type": "Submodel",
               "value": "http://www.lg.co.kr/refrigerator/Innercase/QualityInspectionEquipment/Behavior/SurfaceInspection"
             }
@@ -78,7 +71,6 @@
         {
           "keys": [
             {
-              "idType": "Iri",
               "type": "Submodel",
               "value": "http://www.lg.co.kr/refrigerator/Innercase/QualityInspectionEquipment/Behavior/ProcessSimulation"
             }

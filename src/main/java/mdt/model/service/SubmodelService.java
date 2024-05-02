@@ -1,10 +1,9 @@
-package mdt.model.resource;
+package mdt.model.service;
 
 import java.util.List;
 
 import javax.xml.datatype.Duration;
 
-import org.eclipse.digitaltwin.aas4j.v3.model.Endpoint;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationHandle;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationResult;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationVariable;
@@ -16,8 +15,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
  * @author Kang-Woo Lee (ETRI)
  */
 public interface SubmodelService {
-	public Endpoint getEndpoint();
-	
 	public Submodel getSubmodel();
 	public List<SubmodelElement> getAllSubmodelElements();
 	public SubmodelElement getSubmodelElementByPath(String idShortPath);

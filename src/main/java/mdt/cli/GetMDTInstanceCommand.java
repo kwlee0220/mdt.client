@@ -77,7 +77,7 @@ public class GetMDTInstanceCommand extends MDTCommand {
 	}
 	
 	private void displayAsJson(MDTInstance instance) throws SerializationException {
-		AssetAdministrationShellDescriptor desc = instance.getAASDescriptor();
+		AssetAdministrationShellDescriptor desc = instance.getAssetAdministrationShellDescriptor();
 		
 		JsonSerializer ser = new JsonSerializer();
 		String jsonStr = ser.write(desc);
@@ -90,7 +90,7 @@ public class GetMDTInstanceCommand extends MDTCommand {
 		table.addCell(" FIELD "); table.addCell(" VALUE");
 		table.addCell(" INSTANCE "); table.addCell(" " + instance.getId());
 		
-		AssetAdministrationShellDescriptor aasDesc = instance.getAASDescriptor();
+		AssetAdministrationShellDescriptor aasDesc = instance.getAssetAdministrationShellDescriptor();
 		table.addCell(" AAS_ID "); table.addCell(" " + IdPair.of(aasDesc.getId(), aasDesc.getIdShort()) + " ");
 		table.addCell(" ID_SHORT "); table.addCell(" " + getOrEmpty(aasDesc.getIdShort()) + " ");
 		table.addCell(" ASSET_TYPE "); table.addCell(" " + getOrEmpty(aasDesc.getAssetType()) + " ");

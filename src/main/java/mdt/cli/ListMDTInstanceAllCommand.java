@@ -1,11 +1,18 @@
 package mdt.cli;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.nocrala.tools.texttablefmt.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import utils.StopWatch;
+import utils.UnitUtils;
 import utils.stream.FStream;
 
 import mdt.client.MDTClientConfig;
@@ -30,6 +37,10 @@ public class ListMDTInstanceAllCommand extends MDTCommand {
 	
 	@Option(names={"--table", "-t"}, description="display instances in a table format.")
 	private boolean m_tableFormat = false;
+
+	@Option(names={"--repeat", "-r"}, paramLabel="interval",
+			description="repeat interval (e.g. \"1s\", \"500ms\"")
+	private String m_repeat = null;
 	
 	public ListMDTInstanceAllCommand() {
 		setLogger(s_logger);
@@ -38,23 +49,27 @@ public class ListMDTInstanceAllCommand extends MDTCommand {
 	@Override
 	public void run(MDTClientConfig configs) throws Exception {
 		MDTInstanceManager mgr = this.createMDTInstanceManager(configs);
-		List<MDTInstance> instances = FStream.from(mgr.getInstanceAll()).toList();
 		
-		if ( m_long ) {
-			if ( m_tableFormat ) {
-				displayLongAsTable(instances);
+		Duration repeatInterval = (m_repeat != null) ? UnitUtils.parseDuration(m_repeat) : null;
+		while ( true ) {
+			StopWatch watch = StopWatch.start();
+			
+			try {
+				List<MDTInstance> instances = FStream.from(mgr.getInstanceAll()).toList();
+				String outputString = buildOutputString(instances);
+				System.out.print("\033[2J\033[1;1H");
+				System.out.println(outputString);
 			}
-			else {
-				displayLongWithoutTableFormat(instances);
+			catch ( Exception e ) {
+				System.out.print("\033[2J\033[1;1H");
+				System.out.println("" + e);
 			}
-		}
-		else {
-			if ( m_tableFormat ) {
-				displayAsTable(instances);
+			System.out.println("elapsed: " + watch.stopAndGetElpasedTimeString());
+			
+			if ( repeatInterval == null ) {
+				break;
 			}
-			else {
-				displayWithoutTableFormat(instances);
-			}
+			TimeUnit.MILLISECONDS.sleep(repeatInterval.toMillis());
 		}
 	}
 
@@ -78,19 +93,54 @@ public class ListMDTInstanceAllCommand extends MDTCommand {
 		}
 	}
 	
-	private void displayWithoutTableFormat(List<MDTInstance> instances) {
-		for ( MDTInstance inst : instances ) {
-			System.out.println(FStream.of(toShortColumns(inst)).map(Object::toString).join('|'));
+	private String buildOutputString(List<MDTInstance> instances) {
+		if ( m_long ) {
+			if ( m_tableFormat ) {
+				return buildLongTableString(instances);
+			}
+			else {
+				return buildLongListString(instances);
+			}
+		}
+		else {
+			if ( m_tableFormat ) {
+				return buildTableString(instances);
+			}
+			else {
+				return buildListString(instances);
+			}
 		}
 	}
 	
-	private void displayLongWithoutTableFormat(List<MDTInstance> instances) {
-		for ( MDTInstance inst : instances ) {
-			System.out.println(FStream.of(toLongColumns(inst)).map(Object::toString).join('|'));
+	private String buildListString(List<MDTInstance> instances) {
+		try ( ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			PrintStream out = new PrintStream(baos) ) {
+			for ( MDTInstance inst : instances ) {
+				System.out.println(FStream.of(toShortColumns(inst)).map(Object::toString).join('|'));
+			}
+			out.close();
+			return baos.toString();
+		}
+		catch ( IOException e ) {
+			throw new RuntimeException(e);
 		}
 	}
 	
-	private void displayAsTable(List<MDTInstance> instances) {
+	private String buildLongListString(List<MDTInstance> instances) {
+		try ( ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				PrintStream out = new PrintStream(baos) ) {
+			for ( MDTInstance inst : instances ) {
+				System.out.println(FStream.of(toLongColumns(inst)).map(Object::toString).join('|'));
+			}
+			out.close();
+			return baos.toString();
+		}
+		catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	private String buildTableString(List<MDTInstance> instances) {
 		Table table = new Table(3);
 		table.setColumnWidth(1, 20, 70);
 		
@@ -103,10 +153,10 @@ public class ListMDTInstanceAllCommand extends MDTCommand {
 					.map(Object::toString)
 					.forEach(table::addCell);
 		}
-		System.out.println(table.render());
+		return table.render();
 	}
 	
-	private void displayLongAsTable(List<MDTInstance> instances) {
+	private String buildLongTableString(List<MDTInstance> instances) {
 		Table table = new Table(5);
 		table.setColumnWidth(1, 20, 70);
 		table.setColumnWidth(2, 20, 45);
@@ -122,7 +172,7 @@ public class ListMDTInstanceAllCommand extends MDTCommand {
 					.map(Object::toString)
 					.forEach(table::addCell);
 		}
-		System.out.println(table.render());
+		return table.render();
 	}
 	
 	private Object[] toShortColumns(MDTInstance instance) {

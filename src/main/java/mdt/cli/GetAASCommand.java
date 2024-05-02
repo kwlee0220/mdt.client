@@ -19,6 +19,7 @@ import mdt.client.MDTClientConfig;
 import mdt.client.registry.RegistryModelConverter;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
+import mdt.model.instance.MDTInstanceStatus;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Help.Ansi;
@@ -65,7 +66,7 @@ public class GetAASCommand extends MDTCommand {
 		else if ( m_aasIdShort != null ) {
 			List<MDTInstance> instList = mgr.getInstanceAllByIdShort(m_aasIdShort)
 											.stream()
-											.filter(MDTInstance::isRunning)
+											.filter(inst -> inst.getStatus() == MDTInstanceStatus.RUNNING)
 											.collect(Collectors.toList());
 			if ( instList.size() > 1 ) {
 				System.err.println("Multiple AssetAdministrationShells of idShort: " + m_aasIdShort
@@ -157,7 +158,7 @@ public class GetAASCommand extends MDTCommand {
 					table.addCell(" " + tup._1 + " ");
 				});
 		
-		String url = RegistryModelConverter.getEndpointString(instance.getAASDescriptor().getEndpoints());
+		String url = RegistryModelConverter.getEndpointString(instance.getAssetAdministrationShellDescriptor().getEndpoints());
 		table.addCell(" ENDPOINT "); table.addCell(" " + getOrEmpty(url));
 		
 		System.out.println(table.render());

@@ -14,9 +14,11 @@ import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManagerException;
 import mdt.model.instance.MDTInstancePayload;
 import mdt.model.instance.MDTInstanceStatus;
-import mdt.model.instance.StatusResult;
+import mdt.model.instance.StartResult;
 import mdt.model.repository.AssetAdministrationShellRepository;
 import mdt.model.repository.SubmodelRepository;
+import mdt.model.service.AssetAdministrationShellService;
+import mdt.model.service.SubmodelService;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -70,15 +72,24 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 		return (String)call(req, String.class);
 	}
 
+    // @GetMapping("/arguments/{id}")
+	@Override
+	public String getExecutionArguments() {
+		String url = String.format("%s/arguments/%s", m_endpoint, getId());
+		
+		Request req = new Request.Builder().url(url).get().build();
+		return (String)call(req, String.class);
+	}
+
     // @PostMapping({"/start/{id}"})
 	@Override
-	public StatusResult start() throws MDTInstanceManagerException {
+	public StartResult start() throws MDTInstanceManagerException {
 		String url = String.format("%s/start/%s", m_endpoint, getId());
 
 		try {
 			RequestBody reqBody = createRequestBody("");
 			Request req = new Request.Builder().url(url).post(reqBody).build();
-			return (StatusResult)call(req, StatusResult.class);
+			return call(req, StartResult.class);
 		}
 		catch ( SerializationException e ) {
 			throw new MDTClientException("" + e);
@@ -87,13 +98,13 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 
     // @PostMapping({"/stop/{id}"})
 	@Override
-	public StatusResult stop() {
+	public void stop() {
 		String url = String.format("%s/stop/%s", m_endpoint, getId());
 
 		try {
 			RequestBody reqBody = createRequestBody("");
 			Request req = new Request.Builder().url(url).post(reqBody).build();
-			return (StatusResult)call(req, StatusResult.class);
+			send(req);
 		}
 		catch ( SerializationException e ) {
 			throw new MDTClientException("" + e);
@@ -102,7 +113,7 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 
 	// @GetMapping("/aas_descriptor/{id}")
 	@Override
-	public AssetAdministrationShellDescriptor getAASDescriptor() {
+	public AssetAdministrationShellDescriptor getAssetAdministrationShellDescriptor() {
 		String url = String.format("%s/aas_descriptor/%s", m_endpoint, getId());
 		
 		Request req = new Request.Builder().url(url).get().build();
@@ -138,5 +149,20 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 		
 		String url = String.format("%s/submodels", svcEp);
 		return new HttpSubmodelRepositoryClient(getHttpClient(), url);
+	}
+
+	@Override
+	public AssetAdministrationShellService getAssetAdministrationShellService() {
+		return null;
+	}
+
+	@Override
+	public List<SubmodelService> getAllSubmodelServices() {
+		return null;
+	}
+
+	@Override
+	public SubmodelService getSubmodelServiceById(String submodeId) {
+		return null;
 	}
 }

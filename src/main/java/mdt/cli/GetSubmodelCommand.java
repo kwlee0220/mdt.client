@@ -25,7 +25,7 @@ import mdt.client.registry.RegistryModelConverter;
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.resource.SubmodelService;
+import mdt.model.service.SubmodelService;
 import okhttp3.OkHttpClient;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -193,8 +193,8 @@ public class GetSubmodelCommand extends MDTCommand {
 			table.addCell(" DESCRIPTION "); table.addCell("");
 		}
 		
-		String epStr = RegistryModelConverter.getEndpointString(submodelSvc.getEndpoint()); 
-		table.addCell(" ENDPOINT "); table.addCell(" " + epStr);
+//		String epStr = RegistryModelConverter.getEndpointString(submodelSvc.getEndpoint()); 
+//		table.addCell(" ENDPOINT "); table.addCell(" " + epStr);
 		
 		System.out.println(table.render());
 	}

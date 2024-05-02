@@ -1,4 +1,4 @@
-package mdt.client;
+package mdt.model;
 
 
 /**

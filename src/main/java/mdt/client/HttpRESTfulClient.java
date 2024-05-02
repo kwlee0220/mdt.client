@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
+import mdt.model.InternalException;
 import mdt.model.MDTExceptionEntity;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;

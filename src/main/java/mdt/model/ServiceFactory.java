@@ -1,15 +1,11 @@
 package mdt.model;
 
-import java.util.List;
-
-import org.eclipse.digitaltwin.aas4j.v3.model.Endpoint;
-
 import mdt.model.registry.AssetAdministrationShellRegistry;
 import mdt.model.registry.SubmodelRegistry;
 import mdt.model.repository.AssetAdministrationShellRepository;
 import mdt.model.repository.SubmodelRepository;
-import mdt.model.resource.AssetAdministrationShellService;
-import mdt.model.resource.SubmodelService;
+import mdt.model.service.AssetAdministrationShellService;
+import mdt.model.service.SubmodelService;
 
 
 /**
@@ -23,6 +19,6 @@ public interface ServiceFactory {
 	public AssetAdministrationShellRepository getAssetAdministrationShellRepository(String url);
 	public SubmodelRepository getSubmodelRepository(String url);
 
-	public AssetAdministrationShellService getAssetAdministrationShellService(List<Endpoint> ep);
-	public SubmodelService getSubmodelService(List<Endpoint> ep);
+	public AssetAdministrationShellService getAssetAdministrationShellService(String endpoint);
+	public SubmodelService getSubmodelService(String endpoint);
 }
