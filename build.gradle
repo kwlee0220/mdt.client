@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'etri'
-version = '0.0.1'
+version = '0.9.0'
 mainClassName = 'mdt.cli.MDTCommandsMain'
 
 sourceCompatibility = '17'
@@ -22,11 +22,13 @@ ext {
 	guava_version = '33.1.0-jre'
 	lombok_version = '1.18.32'
 	
-	picocli_version = '3.9.6'
+	picocli_version = '4.7.6'
 	text_tree_version = '2.1.2'
 	text_table_version = '1.2.4'
 
 	okhttp_version = '4.12.0'
+	paho_version = '1.2.5'
+	commons_beanutils_version = '1.9.4'
 	
 	aas4j_version = '1.0.0'
 }
@@ -50,6 +52,12 @@ dependencies {
 	// AAS model
 	implementation "org.eclipse.digitaltwin.aas4j:aas4j-dataformat-json:${aas4j_version}"
 	implementation "org.eclipse.digitaltwin.aas4j:aas4j-dataformat-aasx:${aas4j_version}"
+	
+	// Apache Commons BeanUtils
+	implementation "commons-beanutils:commons-beanutils:${commons_beanutils_version}"
+	
+	// MQTT
+//	implementation "org.eclipse.paho:org.eclipse.paho.client.mqttv3:${paho_version}"
 }
 
 task sourceJar(type: Jar) {
@@ -65,7 +73,7 @@ task javadocJar(type: Jar) {
 shadowJar {
 	classifier 'all'
 	
-	zip64 true
+//	zip64 true
 	mergeServiceFiles()
 	
 	exclude 'META-INF/*.SF'

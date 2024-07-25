@@ -1,7 +1,6 @@
 package mdt.cli;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShell;
-import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
 import org.nocrala.tools.texttablefmt.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,10 +9,10 @@ import utils.func.FOption;
 import utils.stream.FStream;
 
 import mdt.client.MDTClientConfig;
-import mdt.model.instance.MDTInstance;
-import mdt.model.instance.MDTInstanceManager;
-import mdt.model.repository.AssetAdministrationShellRepository;
-import mdt.model.service.AssetAdministrationShellService;
+import mdt.client.instance.HttpMDTInstanceClient;
+import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.model.instance.InstanceSubmodelDescriptor;
+import mdt.model.registry.InvalidResourceStatusException;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Help.Ansi;
@@ -40,7 +39,7 @@ public class ListAASAllCommand extends MDTCommand {
 
 	@Override
 	public void run(MDTClientConfig configs) throws Exception {
-		MDTInstanceManager mgr = this.createMDTInstanceManager(configs);
+		HttpMDTInstanceManagerClient mgr = this.createMDTInstanceManager(configs);
 		if ( m_long ) {
 			if ( m_tableFormat ) {
 				displayLongAsTable(mgr);
@@ -79,17 +78,18 @@ public class ListAASAllCommand extends MDTCommand {
 		}
 	}
 	
-	private void displayShortNoTable(MDTInstanceManager instanceMgr) {
-		for ( MDTInstance inst : instanceMgr.getInstanceAll() ) {
-			AssetAdministrationShellRepository repo = inst.getAssetAdministrationShellRepository();
-			for ( AssetAdministrationShellService aasSvc: repo.getAllAssetAdministrationShells() ) {
-				AssetAdministrationShell aas = aasSvc.getAssetAdministrationShell();
+	private void displayShortNoTable(HttpMDTInstanceManagerClient instanceMgr) {
+		for ( HttpMDTInstanceClient inst : instanceMgr.getAllInstances() ) {
+			try {
+				AssetAdministrationShell aas = inst.getAssetAdministrationShellService()
+													.getAssetAdministrationShell();
 				System.out.println(FStream.of(toShortColumns(aas, inst)).join('|'));
 			}
+			catch ( InvalidResourceStatusException expected ) { }
 		}
 	}
 	
-	private void displayShortTable(MDTInstanceManager instanceMgr) {
+	private void displayShortTable(HttpMDTInstanceManagerClient instanceMgr) {
 		Table table = new Table(4);
 		table.setColumnWidth(1, 20, 70);
 		
@@ -98,27 +98,29 @@ public class ListAASAllCommand extends MDTCommand {
 		table.addCell(" INSTANCE ");
 		table.addCell(" SUBMODELS ");
 
-		for ( MDTInstance inst : instanceMgr.getInstanceAll() ) {
-			AssetAdministrationShellRepository repo = inst.getAssetAdministrationShellRepository();
-			for ( AssetAdministrationShellService aasSvc: repo.getAllAssetAdministrationShells() ) {
-				AssetAdministrationShell aas = aasSvc.getAssetAdministrationShell();
+		for ( HttpMDTInstanceClient inst : instanceMgr.getAllInstances() ) {
+			try {
+				AssetAdministrationShell aas = inst.getAssetAdministrationShellService()
+													.getAssetAdministrationShell();
 				FStream.of(toShortColumns(aas, inst)).forEach(table::addCell);
 			}
+			catch ( InvalidResourceStatusException expected ) { }
 		}
 		System.out.println(table.render());
 	}
 	
-	private void displayLongNoTable(MDTInstanceManager instanceMgr) {
-		for ( MDTInstance inst : instanceMgr.getInstanceAll() ) {
-			AssetAdministrationShellRepository repo = inst.getAssetAdministrationShellRepository();
-			for ( AssetAdministrationShellService aasSvc: repo.getAllAssetAdministrationShells() ) {
-				AssetAdministrationShell aas = aasSvc.getAssetAdministrationShell();
+	private void displayLongNoTable(HttpMDTInstanceManagerClient instanceMgr) {
+		for ( HttpMDTInstanceClient inst : instanceMgr.getAllInstances() ) {
+			try {
+				AssetAdministrationShell aas = inst.getAssetAdministrationShellService()
+													.getAssetAdministrationShell();
 				System.out.println(FStream.of(toLongColumns(aas, inst)).join('|'));
 			}
+			catch ( InvalidResourceStatusException expected ) { }
 		}
 	}
 	
-	private void displayLongAsTable(MDTInstanceManager instanceMgr) {
+	private void displayLongAsTable(HttpMDTInstanceManagerClient instanceMgr) {
 		Table table = new Table(6);
 		table.setColumnWidth(0, 20, 70);
 		table.setColumnWidth(4, 10, 50);
@@ -131,19 +133,20 @@ public class ListAASAllCommand extends MDTCommand {
 		table.addCell(" DISPLAY_NAMES ");
 		table.addCell(" SUBMODELS ");
 		
-		for ( MDTInstance inst : instanceMgr.getInstanceAll() ) {
-			AssetAdministrationShellRepository repo = inst.getAssetAdministrationShellRepository();
-			for ( AssetAdministrationShellService aasSvc: repo.getAllAssetAdministrationShells() ) {
-				AssetAdministrationShell aas = aasSvc.getAssetAdministrationShell();
+		for ( HttpMDTInstanceClient inst : instanceMgr.getAllInstances() ) {
+			try {
+				AssetAdministrationShell aas = inst.getAssetAdministrationShellService()
+													.getAssetAdministrationShell();
 				FStream.of(toLongColumns(aas, inst)).forEach(table::addCell);
 			}
+			catch ( InvalidResourceStatusException expected ) { }
 		}
 		System.out.println(table.render());
 	}
 	
-	private String[] toShortColumns(AssetAdministrationShell aas, MDTInstance inst) {
-		String smIdCsv = FStream.from(inst.getAllSubmodelDescriptors())
-								.map(SubmodelDescriptor::getIdShort)
+	private String[] toShortColumns(AssetAdministrationShell aas, HttpMDTInstanceClient inst) {
+		String smIdCsv = FStream.from(inst.getInstanceSubmodelDescriptors())
+								.map(InstanceSubmodelDescriptor::getIdShort)
 								.join(", ");
 		
 		return new String[] {
@@ -154,13 +157,13 @@ public class ListAASAllCommand extends MDTCommand {
 		};
 	}
 	
-	private String[] toLongColumns(AssetAdministrationShell aas, MDTInstance inst) {
+	private String[] toLongColumns(AssetAdministrationShell aas, HttpMDTInstanceClient inst) {
 		String displayNames = FOption.ofNullable(aas.getDisplayName())
 									.flatMapFStream(names -> FStream.from(names))
 									.join(", ");
 		
-		String smIdCsv = FStream.from(inst.getAllSubmodelDescriptors())
-								.map(SubmodelDescriptor::getIdShort)
+		String smIdCsv = FStream.from(inst.getInstanceSubmodelDescriptors())
+								.map(InstanceSubmodelDescriptor::getIdShort)
 								.join(", ");
 		return new String[] {
 			aas.getId(),										// ID

@@ -23,23 +23,26 @@ public final class SubmodelNode implements Node {
 
 	@Override
 	public String getText() {
-		return String.format("%s", m_submodel.getIdShort());
+		String idShortStr = "";
+		if ( m_submodel.getIdShort() != null ) {
+			idShortStr = String.format(", (%s)", m_submodel.getIdShort());
+		}
+		return String.format("%s%s", m_submodel.getId(), idShortStr);
 	}
 
 	@Override
 	public Iterable<? extends Node> getChildren() {
-		List<Node> attributes = Lists.newArrayList();
-		attributes.add(new TextNode("ID: " + m_submodel.getId()));
-		if ( !isEmpty(m_submodel.getIdShort()) ) {
-			attributes.add(new TextNode("ID_SHORT: " + m_submodel.getIdShort()));
+		List<Node> children = Lists.newArrayList();
+		
+		if ( m_submodel.getSemanticId() != null ) {
+			String id = m_submodel.getSemanticId().getKeys().get(0).getValue();
+			children.add(new TextNode(String.format("semanticId: %s", id)));
 		}
 		
-		return FStream.from(attributes)
-					.concatWith(FStream.from(m_submodel.getSubmodelElements())
-							.map(sme -> SubmodelElementNodeFactory.toNode(sme, null)));
-	}
-	
-	private boolean isEmpty(Object obj) {
-		return (obj == null || obj.toString().trim().length() == 0);
+		FStream.from(m_submodel.getSubmodelElements())
+				.map(sme -> SubmodelElementNodeFactory.toNode("", sme))
+				.forEach(children::add);
+		
+		return children;
 	}
 }

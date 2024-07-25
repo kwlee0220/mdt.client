@@ -1,14 +1,20 @@
 package mdt.cli;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import utils.StateChangePoller;
+import utils.UnitUtils;
+import utils.func.CheckedSupplier;
+import utils.stream.FStream;
+
 import mdt.client.MDTClientConfig;
-import mdt.model.instance.MDTInstance;
-import mdt.model.instance.MDTInstanceManager;
+import mdt.client.instance.HttpMDTInstanceClient;
+import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.instance.MDTInstanceStatus;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -30,31 +36,64 @@ public class StopMDTInstanceCommand extends MDTCommand {
 	@Option(names={"--all", "-a"}, description="start all stopped MDTInstances")
 	private boolean m_stopAll;
 
+	@Option(names={"--nowait"}, paramLabel="duration",
+			description="Do not wait until the instance gets to running")
+	private boolean m_nowait = false;
+	
+	@Option(names={"-v"}, description="verbose")
+	private boolean m_verbose = false;
+
 	public StopMDTInstanceCommand() {
 		setLogger(s_logger);
 	}
 
 	@Override
 	public void run(MDTClientConfig configs) throws Exception {
-		MDTInstanceManager mgr = this.createMDTInstanceManager(configs);
+		HttpMDTInstanceManagerClient mgr = this.createMDTInstanceManager(configs);
 
-		List<String> targetIdList;
+		List<HttpMDTInstanceClient> targetInstList;
 		if ( m_stopAll ) {
-			targetIdList = mgr.getAllInstancesOfStatus(MDTInstanceStatus.RUNNING).stream()
-								.map(MDTInstance::getId)
-								.collect(Collectors.toList());
+			targetInstList = mgr.getAllInstancesByFilter("instance.status = 'RUNNING'");
 		}
 		else {
-			targetIdList = m_instanceIds;
+			targetInstList = FStream.from(m_instanceIds)
+									.map(mgr::getInstance)
+									.toList();
 		}
-		for ( String instId: targetIdList ) {
+		for ( HttpMDTInstanceClient instance: targetInstList ) {
 			try {
-				MDTInstance instance = mgr.getInstance(instId);
-				instance.stop();
-				System.out.printf("stopped instance: %s%n", instId);
+				System.out.println("stopping instance: " + instance.getId());
+				stopInstance(instance);
 			}
 			catch ( Exception e ) {
-				System.out.printf("failed to stop instance: %s, cause=%s%n", instId, e);
+				System.out.printf("failed to stop instance: %s, cause=%s%n", instance.getId(), e);
+			}
+		}
+	}
+	
+	private void stopInstance(HttpMDTInstanceClient instance) throws TimeoutException, InterruptedException,
+																		ExecutionException {
+		instance.stopAsync();
+		if ( !m_nowait ) {
+			// wait하는 경우에는 MDTInstance의 상태를 계속적으로 polling하여
+			// 'STOPPING' 상태에서 벗어날 때까지 대기한다.
+			CheckedSupplier<Boolean> whilePredicate = new CheckedSupplier<>() {
+				@Override
+				public Boolean get() {
+					MDTInstanceStatus status = instance.reload().getStatus();
+					if ( m_verbose ) {
+						System.out.print(".");
+					}
+					return status == MDTInstanceStatus.STOPPING;
+				}
+			};
+			
+			StateChangePoller.pollWhile(whilePredicate)
+							.interval(UnitUtils.parseDuration("1s"))
+							.build()
+							.run();
+			if ( m_verbose ) {
+				System.out.println();
 			}
 		}
 	}

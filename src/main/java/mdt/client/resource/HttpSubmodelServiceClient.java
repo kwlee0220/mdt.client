@@ -7,15 +7,27 @@ import java.util.List;
 import javax.xml.datatype.Duration;
 
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
+import org.eclipse.digitaltwin.aas4j.v3.model.BaseOperationResult;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationHandle;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationResult;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationVariable;
+import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultOperationRequest;
 
+import com.google.common.base.Preconditions;
+
+import utils.func.Tuple;
+
 import mdt.client.Fa3stHttpClient;
+import mdt.client.MDTClientException;
+import mdt.client.SSLUtils;
 import mdt.model.registry.RegistryException;
+import mdt.model.registry.ResourceNotFoundException;
+import mdt.model.resource.MDTOperationHandle;
+import mdt.model.resource.value.PropertyValues.StringValue;
+import mdt.model.resource.value.SubmodelElementValue;
 import mdt.model.service.SubmodelService;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -35,6 +47,16 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 		m_url = url;
 	}
 	
+	public static HttpSubmodelServiceClient newTrustAllSubmodelServiceClient(String url) {
+		try {
+			OkHttpClient client = SSLUtils.newTrustAllOkHttpClientBuilder().build();
+			return new HttpSubmodelServiceClient(client, url);
+		}
+		catch ( Exception e ) {
+			throw new MDTClientException("Failed to create a trust-all client", e);
+		}
+	}
+	
 	@Override
 	public Submodel getSubmodel() {
 		Request req = new Request.Builder().url(m_url).get().build();
@@ -42,7 +64,7 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	}
 	
 	@Override
-	public Submodel updateSubmodel(Submodel aas) {
+	public Submodel putSubmodel(Submodel aas) {
 		try {
 			RequestBody reqBody = createRequestBody(aas);
 			
@@ -64,8 +86,7 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 
 	@Override
 	public SubmodelElement getSubmodelElementByPath(String idShortPath) {
-//		String url = String.format("%s/submodel-elements/%s", m_url, encodeBase64(idShortPath));
-		idShortPath = URLEncoder.encode(idShortPath, StandardCharsets.UTF_8);
+		idShortPath = encodeIdShortPath(idShortPath);
 		String url = String.format("%s/submodel-elements/%s", m_url, idShortPath);
 		
 		Request req = new Request.Builder().url(url).get().build();
@@ -73,7 +94,7 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	}
 
 	@Override
-	public SubmodelElement addSubmodelElement(SubmodelElement element) {
+	public SubmodelElement postSubmodelElement(SubmodelElement element) {
 		try {
 			String url = m_url + "/submodel-elements";
 			RequestBody reqBody = createRequestBody(element);
@@ -87,9 +108,9 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	}
 
 	@Override
-	public SubmodelElement addSubmodelElementByPath(String idShortPath, SubmodelElement element) {
+	public SubmodelElement postSubmodelElementByPath(String idShortPath, SubmodelElement element) {
 		try {
-			String url = String.format("%s/submodel-elements/%s", m_url, encodeBase64(idShortPath));
+			String url = String.format("%s/submodel-elements/%s", m_url, encodeIdShortPath(idShortPath));
 			RequestBody reqBody = createRequestBody(element);
 			
 			Request req = new Request.Builder().url(url).post(reqBody).build();
@@ -101,9 +122,9 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	}
 
 	@Override
-	public SubmodelElement updateSubmodelElementByPath(String idShortPath, SubmodelElement element) {
+	public SubmodelElement putSubmodelElementByPath(String idShortPath, SubmodelElement element) {
 		try {
-			String url = String.format("%s/submodel-elements/%s", m_url, encodeBase64(idShortPath));
+			String url = String.format("%s/submodel-elements/%s", m_url, encodeIdShortPath(idShortPath));
 			RequestBody reqBody = createRequestBody(element);
 			
 			Request req = new Request.Builder().url(url).put(reqBody).build();
@@ -115,13 +136,29 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	}
 
 	@Override
-	public void updateSubmodelElementValueByPath(String idShortPath, Object element) {
+	public void patchSubmodelElementByPath(String idShortPath, SubmodelElement element)
+			throws ResourceNotFoundException {
 		try {
-			String url = String.format("%s/submodel-elements/%s?content=value",
-										m_url, encodeBase64(idShortPath));
+			String url = String.format("%s/submodel-elements/%s",
+										m_url, encodeIdShortPath(idShortPath));
 			RequestBody reqBody = createRequestBody(element);
 			
-			Request req = new Request.Builder().url(url).put(reqBody).build();
+			Request req = new Request.Builder().url(url).patch(reqBody).build();
+			send(req);
+		}
+		catch ( SerializationException e ) {
+			throw new RegistryException("" + e);
+		}
+	}
+
+	@Override
+	public void patchSubmodelElementValueByPath(String idShortPath, SubmodelElementValue value) {
+		try {
+			String url = String.format("%s/submodel-elements/%s/$value",
+										m_url, encodeIdShortPath(idShortPath));
+			RequestBody reqBody = createRequestBody(value.toJsonObject());
+			
+			Request req = new Request.Builder().url(url).patch(reqBody).build();
 			send(req);
 		}
 		catch ( SerializationException e ) {
@@ -131,7 +168,7 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 
 	@Override
 	public void deleteSubmodelElementByPath(String idShortPath) {
-		String url = String.format("%s/submodel-elements/%s", m_url, encodeBase64(idShortPath));
+		String url = String.format("%s/submodel-elements/%s", m_url, encodeIdShortPath(idShortPath));
 		
 		Request req = new Request.Builder().url(url).delete().build();
 		send(req);
@@ -142,7 +179,7 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 												List<OperationVariable> inoutputArguments, Duration timeout) {
 		try {
 			String url = String.format("%s/submodel-elements/%s/invoke",
-										m_url, encodeBase64(idShortPath));
+										m_url, encodeIdShortPath(idShortPath));
 			DefaultOperationRequest request = new DefaultOperationRequest.Builder()
 													.inputArguments(inputArguments)
 													.inoutputArguments(inoutputArguments)
@@ -162,8 +199,8 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	public OperationHandle invokeOperationAsync(String idShortPath, List<OperationVariable> inputArguments,
 												List<OperationVariable> inoutputArguments, Duration timeout) {
 		try {
-			String url = String.format("%s/submodel-elements/%s/invoke?async=true",
-										m_url, encodeBase64(idShortPath));
+			String url = String.format("%s/submodel-elements/%s/invoke-async",
+										m_url, encodeIdShortPath(idShortPath));
 			DefaultOperationRequest request = new DefaultOperationRequest.Builder()
 													.inputArguments(inputArguments)
 													.inoutputArguments(inoutputArguments)
@@ -172,7 +209,9 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 			RequestBody reqBody = createRequestBody(request);
 			
 			Request req = new Request.Builder().url(url).post(reqBody).build();
-			return call(req, OperationHandle.class);
+			Tuple<String,String> ret = callAsync(req, String.class);
+			
+			return new MDTOperationHandle(encodeIdShortPath(idShortPath), ret._1);
 		}
 		catch ( SerializationException e ) {
 			throw new RegistryException("" + e);
@@ -180,11 +219,30 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	}
 
 	@Override
-	public OperationResult getOperationAsyncResult(OperationHandle handleId) {
+	public OperationResult getOperationAsyncResult(OperationHandle handle) {
+		Preconditions.checkArgument(handle instanceof MDTOperationHandle);
+
+		MDTOperationHandle mdtHandle = (MDTOperationHandle)handle;
 		String url = String.format("%s/submodel-elements/%s/operation-results/%s",
-									m_url, encodeBase64(handleId.getHandleId()));
+									m_url, mdtHandle.getIdShortPathEncoded(), mdtHandle.getHandleId());
 		
 		Request req = new Request.Builder().url(url).get().build();
 		return call(req, OperationResult.class);
+	}
+
+	@Override
+	public BaseOperationResult getOperationAsyncStatus(OperationHandle handle) {
+		Preconditions.checkArgument(handle instanceof MDTOperationHandle);
+		
+		MDTOperationHandle mdtHandle = (MDTOperationHandle)handle;
+		String url = String.format("%s/submodel-elements/%s/%s",
+									m_url, mdtHandle.getIdShortPathEncoded(), mdtHandle.getStatusLocation());
+
+		Request req = new Request.Builder().url(url).get().build();
+		return call(req, BaseOperationResult.class);
+	}
+	
+	private String encodeIdShortPath(String idShortPath) {
+		return URLEncoder.encode(idShortPath, StandardCharsets.UTF_8);
 	}
 }

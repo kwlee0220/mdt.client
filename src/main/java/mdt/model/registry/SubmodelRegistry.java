@@ -41,7 +41,7 @@ public interface SubmodelRegistry {
 	 * 									이미 존재하는 경우
 	 * @throws RegistryException		Descriptor 등록 과정 중 오류가 발생한 경우.
 	 */
-	public SubmodelDescriptor addSubmodelDescriptor(SubmodelDescriptor submodel)
+	public SubmodelDescriptor postSubmodelDescriptor(SubmodelDescriptor submodel)
 		throws ResourceAlreadyExistsException, RegistryException;
 	
 	/**
@@ -52,7 +52,7 @@ public interface SubmodelRegistry {
 	 * @throws ResourceNotFoundException	식별자에 해당하는 등록 SubmodelDescriptor가 없는 경우
 	 * @throws RegistryException		Descriptor 갱신 과정 중 오류가 발생한 경우.
 	 */
-	public SubmodelDescriptor updateSubmodelDescriptorById(SubmodelDescriptor submodel)
+	public SubmodelDescriptor putSubmodelDescriptorById(SubmodelDescriptor submodel)
 		throws ResourceNotFoundException, RegistryException;
 	
 	/**
@@ -62,6 +62,6 @@ public interface SubmodelRegistry {
 	 * @throws ResourceNotFoundException	식별자에 해당하는 SubmodelDescriptor가 존재하지 않는 경우.
 	 * @throws RegistryException	Descriptor 삭제 과정 중 오류가 발생한 경우.
 	 */
-	public void removeSubmodelDescriptorById(String submodelId)
+	public void deleteSubmodelDescriptorById(String submodelId)
 		throws ResourceNotFoundException, RegistryException;
 }

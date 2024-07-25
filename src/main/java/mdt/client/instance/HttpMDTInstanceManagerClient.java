@@ -5,28 +5,33 @@ import java.io.IOException;
 import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
-import org.eclipse.digitaltwin.aas4j.v3.model.Endpoint;
 import org.eclipse.digitaltwin.aas4j.v3.model.Environment;
+import org.eclipse.digitaltwin.aas4j.v3.model.Key;
+import org.eclipse.digitaltwin.aas4j.v3.model.KeyTypes;
+import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
+import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
+
+import com.google.common.base.Preconditions;
 
 import utils.stream.FStream;
 
 import mdt.client.HttpAASRESTfulClient;
 import mdt.client.HttpServiceFactory;
+import mdt.client.MDTClientConfig;
 import mdt.client.Utils;
-import mdt.client.registry.RegistryModelConverter;
 import mdt.model.instance.AddMDTInstancePayload;
+import mdt.model.instance.InstanceDescriptor;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
+import mdt.model.instance.MDTInstanceManagerClient;
 import mdt.model.instance.MDTInstanceManagerException;
-import mdt.model.instance.MDTInstancePayload;
-import mdt.model.instance.MDTInstanceStatus;
-import mdt.model.registry.AssetAdministrationShellRegistry;
+import mdt.model.registry.AASRegistry;
+import mdt.model.registry.InvalidResourceStatusException;
 import mdt.model.registry.RegistryException;
 import mdt.model.registry.ResourceNotFoundException;
-import mdt.model.registry.ResourceNotReadyException;
 import mdt.model.registry.SubmodelRegistry;
-import mdt.model.service.AssetAdministrationShellService;
 import mdt.model.service.SubmodelService;
+import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.Request;
@@ -37,18 +42,25 @@ import okhttp3.RequestBody;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient implements MDTInstanceManager {
-	public static final String PATH_AAS_REPOSITORY = "/registry/shell-descriptors";
-	public static final String PATH_SUBMODEL_REPOSITORY = "/registry/submodel-descriptors";
+public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient
+											implements MDTInstanceManagerClient<HttpMDTInstanceClient> {
+	public static final String PATH_INSTANCE_MANAGER = "/instance-manager";
+	public static final String PATH_AAS_REPOSITORY = "/shell-registry";
+	public static final String PATH_SUBMODEL_REPOSITORY = "/submodel-registry";
 	
 	private final HttpServiceFactory m_serviceFactory;
 	private final String m_baseUrl;
 	private final String m_endpoint;
+	private final InstanceDescriptorSerDe m_serde = new InstanceDescriptorSerDe();
+	
+	public static HttpMDTInstanceManagerClient create(MDTClientConfig config) {
+		return create(config.getEndpoint());
+	}
 	
 	public static HttpMDTInstanceManagerClient create(String host, int port) {
 		try {
 			HttpServiceFactory svcFact = new HttpServiceFactory();
-			String endpoint = String.format("http://%s:%d/instance_manager", host, port);
+			String endpoint = String.format("http://%s:%d/%s", host, port, PATH_INSTANCE_MANAGER);
 			return new HttpMDTInstanceManagerClient(svcFact, endpoint);
 		}
 		catch ( Exception e ) {
@@ -75,9 +87,13 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient implement
 		m_baseUrl = endpoint.substring(0, idx);
 		m_endpoint = endpoint;
 	}
+	
+	public String getEndpoint() {
+		return m_endpoint;
+	}
 
 	@Override
-	public AssetAdministrationShellRegistry getAssetAdministrationShellRegistry() {
+	public AASRegistry getAssetAdministrationShellRegistry() {
 		return m_serviceFactory.getAssetAdministrationShellRegistry(m_baseUrl + PATH_AAS_REPOSITORY);
 	}
 
@@ -86,81 +102,73 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient implement
 		return m_serviceFactory.getSubmodelRegistry(m_baseUrl + PATH_SUBMODEL_REPOSITORY);
 	}
 
-    // @GetMapping("/id/{id}")
-	@Override
-	public MDTInstance getInstance(String id) throws MDTInstanceManagerException {
-		String url = String.format("%s/id/%s", m_endpoint, id);
+    // @GetMapping({"instances/{id}"})
+	InstanceDescriptor getInstanceDescriptor(String id) {
+		String url = String.format("%s/instances/%s", m_endpoint, id);
 
 		Request req = new Request.Builder().url(url).get().build();
-		MDTInstancePayload payload = (MDTInstancePayload)call(req, MDTInstancePayload.class);
-		return new HttpMDTInstanceClient(getHttpClient(), toMDTInstanceEndpoint(m_baseUrl), payload);
-	}
-
-    // @GetMapping("/aasId/{aasId}")
-	@Override
-	public MDTInstance getInstanceByAasId(String aasId) throws MDTInstanceManagerException {
-		String url = String.format("%s/aasId/%s", m_endpoint, encodeBase64(aasId));
-		
-		Request req = new Request.Builder().url(url).get().build();
-		MDTInstancePayload payload = (MDTInstancePayload)call(req, MDTInstancePayload.class);
-		return new HttpMDTInstanceClient(getHttpClient(), toMDTInstanceEndpoint(m_baseUrl), payload);
-	}
-
-    // @GetMapping({"/aasIdShort/{aasIdShort}"})
-	@Override
-	public List<MDTInstance> getInstanceAllByIdShort(String aasIdShort) throws MDTInstanceManagerException {
-		String url = String.format("%s/aasIdShort/%s", m_endpoint, aasIdShort);
-		
-		Request req = new Request.Builder().url(url).get().build();
-		
-		List<MDTInstancePayload> payloadList = callList(req, MDTInstancePayload.class);
-		return FStream.from(payloadList)
-						.map(p -> new HttpMDTInstanceClient(getHttpClient(),
-															toMDTInstanceEndpoint(m_baseUrl), p))
-						.cast(MDTInstance.class)
-						.toList();
-	}
-
-    // @GetMapping({"/all"})
-	@Override
-	public List<MDTInstance> getInstanceAll() throws MDTInstanceManagerException {
-		String url = String.format("%s/all", m_endpoint);
-		
-		Request req = new Request.Builder().url(url).get().build();
-		
-		List<MDTInstancePayload> payloadList = callList(req, MDTInstancePayload.class);
-		return FStream.from(payloadList)
-						.map(p -> new HttpMDTInstanceClient(getHttpClient(),
-															toMDTInstanceEndpoint(m_baseUrl), p))
-						.cast(MDTInstance.class)
-						.toList();
-	}
-
-    // @PutMapping({"/status"})
-	@Override
-	public List<MDTInstance> getAllInstancesOfStatus(MDTInstanceStatus status)
-		throws MDTInstanceManagerException {
-		try {
-			String url = String.format("%s/status", m_endpoint);
-			RequestBody reqBody = createRequestBody(status);
-			
-			Request req = new Request.Builder().url(url).put(reqBody).build();
-			
-			List<MDTInstancePayload> payloadList = callList(req, MDTInstancePayload.class);
-			return FStream.from(payloadList)
-							.map(p -> new HttpMDTInstanceClient(getHttpClient(),
-																toMDTInstanceEndpoint(m_baseUrl), p))
-							.cast(MDTInstance.class)
-							.toList();
+		String json = call(req, String.class);
+		if ( json != null ) {
+			return m_serde.readInstanceDescriptor(json);
 		}
-		catch ( SerializationException e ) {
-			throw new RegistryException("" + e);
+		else {
+			throw new ResourceNotFoundException("MDTInstance", "id=" + id);
 		}
 	}
 
-    // @PostMapping({""})
 	@Override
-	public MDTInstance addInstance(String id, File aasFile, String arguments)
+	public HttpMDTInstanceClient getInstance(String id) throws MDTInstanceManagerException {
+		InstanceDescriptor desc = getInstanceDescriptor(id);
+		return new HttpMDTInstanceClient(this, desc);
+	}
+
+    // @GetMapping({"/instances"})
+	@Override
+	public List<HttpMDTInstanceClient> getAllInstances() throws MDTInstanceManagerException {
+		String url = String.format("%s/instances", m_endpoint);
+		Request req = new Request.Builder().url(url).get().build();
+		
+		String descListJson = call(req, String.class);
+		return FStream.from(m_serde.readInstanceDescriptorList(descListJson))
+						.map(p -> new HttpMDTInstanceClient(this, p))
+						.toList();
+	}
+
+    // @GetMapping({"/instances?filter={filter}"})
+	@Override
+	public List<HttpMDTInstanceClient> getAllInstancesByFilter(String filter) {
+		String url = String.format("%s/instances", m_endpoint);
+		HttpUrl httpUrl = HttpUrl.parse(url).newBuilder()
+						 		.addQueryParameter("filter", filter)
+					 			.build();
+		Request req = new Request.Builder().url(httpUrl).get().build();
+		String descListJson = call(req, String.class);
+		return FStream.from(m_serde.readInstanceDescriptorList(descListJson))
+						.map(p -> new HttpMDTInstanceClient(this, p))
+						.toList();
+	}
+	
+	@Override
+	public HttpMDTInstanceClient getInstanceByAasId(String aasId) throws ResourceNotFoundException {
+		String filter = String.format("instance.aasId = '%s'", aasId);
+		List<HttpMDTInstanceClient> instList = getAllInstancesByFilter(filter);
+		if ( instList.size() == 0 ) {
+			throw new ResourceNotFoundException("MDTInstance", "aasId=" + aasId);
+		}
+		else {
+			return instList.get(0);
+		}
+	}
+	
+	@Override
+	public List<HttpMDTInstanceClient> getAllInstancesByAasIdShort(String aasIdShort) {
+		String filter = String.format("instance.aasIdShort = '%s'", aasIdShort);
+		return getAllInstancesByFilter(filter);
+	}
+
+    // @PostMapping({"/instances"})
+	@Override
+	public HttpMDTInstanceClient addInstance(String id, File aasFile, String arguments)
 		throws MDTInstanceManagerException {
 		try {
 			// AAS Environment 정의 파일을 읽어서 AAS Registry에 등록한다.
@@ -168,11 +176,13 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient implement
 			
 			AddMDTInstancePayload add = new AddMDTInstancePayload(id, env, arguments);
 			RequestBody reqBody = createRequestBody(add);
+
+			String url = String.format("%s/instances", m_endpoint);
+			Request req = new Request.Builder().url(url).post(reqBody).build();
+			String json = call(req, String.class);
+			InstanceDescriptor desc = m_serde.readInstanceDescriptor(json);
 			
-			Request req = new Request.Builder().url(m_endpoint).post(reqBody).build();
-			MDTInstancePayload payload = (MDTInstancePayload)call(req, MDTInstancePayload.class);
-			
-			return new HttpMDTInstanceClient(getHttpClient(), toMDTInstanceEndpoint(m_baseUrl), payload);
+			return new HttpMDTInstanceClient(this, desc);
 		}
 		catch ( IOException | SerializationException e ) {
 			String params = String.format("%s: (%s)", id, arguments);
@@ -183,7 +193,9 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient implement
 	
 	private static final MediaType OCTET_TYPE = MediaType.parse("application/octet-stream");
 	private static final MediaType JSON_TYPE = MediaType.parse("text/json");
-	public MDTInstance addInstance(String id, String imageId, File jarFile, File modelFile, File confFile)
+    // @PostMapping({"/instances"})
+	public HttpMDTInstanceClient addInstance(String id, String imageId, File jarFile, File modelFile,
+												File confFile)
 		throws MDTInstanceManagerException {
 		MultipartBody.Builder builder = new MultipartBody.Builder()
 											.setType(MultipartBody.FORM)
@@ -192,70 +204,62 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient implement
 			builder = builder.addFormDataPart("imageId", imageId);
 		}
 		if ( jarFile != null ) {
-			builder = builder.addFormDataPart("jar", "fa3st-repository.jar",
+			builder = builder.addFormDataPart("jar", MDTInstanceManager.CANONICAL_FA3ST_JAR_FILE,
 												RequestBody.create(jarFile, OCTET_TYPE));
 		}
 		if ( modelFile != null ) {
-			builder = builder.addFormDataPart("initialModel", "model.json",
+			builder = builder.addFormDataPart("initialModel", MDTInstanceManager.CANONICAL_MODEL_FILE,
 												RequestBody.create(modelFile, JSON_TYPE));
 		}
 		if ( confFile != null ) {
-			builder = builder.addFormDataPart("instanceConf", "conf.json",
+			builder = builder.addFormDataPart("instanceConf", MDTInstanceManager.CANONICAL_CONF_FILE,
 												RequestBody.create(confFile, JSON_TYPE));
 		}
+
+		String url = String.format("%s/instances", m_endpoint);
 		RequestBody reqBody = builder.build();
-		
-		Request req = new Request.Builder().url(m_endpoint).post(reqBody).build();
-		MDTInstancePayload payload = (MDTInstancePayload)call(req, MDTInstancePayload.class);
-		
-		return new HttpMDTInstanceClient(getHttpClient(), toMDTInstanceEndpoint(m_baseUrl), payload);
+		Request req = new Request.Builder().url(url).post(reqBody).build();
+		String json = call(req, String.class);
+		InstanceDescriptor desc = m_serde.readInstanceDescriptor(json);
+		return new HttpMDTInstanceClient(this, desc);
 	}
 
-    // @DeleteMapping("/{id}")
+    // @DeleteMapping("/instances/{id}")
 	@Override
 	public void removeInstance(String id) throws MDTInstanceManagerException {
-		String url = String.format("%s/%s", m_endpoint, id);
+		String url = String.format("%s/instances/%s", m_endpoint, id);
 		
 		Request req = new Request.Builder().url(url).delete().build();
 		send(req);
 	}
+	public void removeInstance(MDTInstance inst) throws MDTInstanceManagerException {
+		removeInstance(inst.getId());
+	}
 
-    // @DeleteMapping("")
+    // @DeleteMapping("/instances")
 	@Override
 	public void removeInstanceAll() throws MDTInstanceManagerException {
-		Request req = new Request.Builder().url(m_endpoint).delete().build();
+		String url = String.format("%s/instances", m_endpoint);
+		Request req = new Request.Builder().url(url).delete().build();
 		send(req);
 	}
 
-	@Override
-	public AssetAdministrationShellService getAssetAdministrationShellService(String aasId)
-		throws ResourceNotFoundException, ResourceNotReadyException, RegistryException {
-		List<Endpoint> eps = getAssetAdministrationShellRegistry()
-								.getAssetAdministrationShellDescriptorById(aasId)
-								.getEndpoints();
-		String endpoint = RegistryModelConverter.getEndpointString(eps);
-		if ( endpoint == null ) {
-			throw new ResourceNotReadyException("AssetAdministrationShell", aasId);
-		}
+	public SubmodelElement getSubmodelElementByReference(Reference ref)
+		throws ResourceNotFoundException, InvalidResourceStatusException, RegistryException {
+		Preconditions.checkArgument(ref != null);
+		Preconditions.checkArgument(ref.getKeys().size() > 1, "Empty Reference");
 		
-		return m_serviceFactory.getAssetAdministrationShellService(endpoint);
-	}
-
-	@Override
-	public SubmodelService getSubmodelService(String submodelId)
-		throws ResourceNotFoundException, ResourceNotReadyException, RegistryException {
-		List<Endpoint> eps = getSubmodelRegistry()
-								.getSubmodelDescriptorById(submodelId)
-								.getEndpoints();
-		String endpoint = RegistryModelConverter.getEndpointString(eps);
-		if ( endpoint == null ) {
-			throw new ResourceNotReadyException("Submodel", submodelId);
-		}
+		Key submodelKey = ref.getKeys().get(0);
+		Preconditions.checkArgument(submodelKey.getType() == KeyTypes.SUBMODEL,
+									"The first key should be 'SUBMODEL'");
+		String idShortPath = FStream.from(ref.getKeys())
+									.drop(1)
+									.map(Key::getValue)
+									.join('.');
 		
-		return m_serviceFactory.getSubmodelService(endpoint);
-	}
-	
-	private String toMDTInstanceEndpoint(String endpoint) {
-		return m_baseUrl + "/instances";
+		String submodelId = submodelKey.getValue();
+		HttpMDTInstanceClient inst = getAllInstancesBySubmodelId(submodelId);
+		SubmodelService svc = inst.getSubmodelServiceById(submodelId);
+		return svc.getSubmodelElementByPath(idShortPath);
 	}
 }

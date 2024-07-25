@@ -41,10 +41,10 @@ public class AddMDTInstanceCommand extends MDTCommand {
 			description="Docker image id for the MDTInstance (DockerInstance or KubernetesInstance)")
 	private String m_imageId;
 	
-	@Option(names={"--model"}, paramLabel="path", description="Initial AAS Environment file path")
+	@Option(names={"--model", "-m"}, paramLabel="path", description="Initial AAS Environment file path")
 	private File m_aasFile;
 	
-	@Option(names={"--instance_conf"}, paramLabel="path", description="MDTInstance configuration path")
+	@Option(names={"--conf", "-c"}, paramLabel="path", description="MDTInstance configuration path")
 	private File m_aasConf;
 
 	public AddMDTInstanceCommand() {

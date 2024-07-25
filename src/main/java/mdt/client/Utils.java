@@ -3,7 +3,6 @@ package mdt.client;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -82,14 +81,6 @@ public class Utils {
 					._interface(intfc.getName())
 					.protocolInformation(protoInfo)
 					.build();
-	}
-	
-	public static String encodeBase64(String str) {
-		return Base64.getEncoder().encodeToString(str.getBytes());
-	}
-	
-	public static String decodeBase64(String str) {
-		return new String(Base64.getDecoder().decode(str));
 	}
 	
 	public static Environment readEnvironment(File aasEnvFile)

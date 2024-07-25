@@ -2,3 +2,6 @@ rootProject.name = 'mdt.client'
 
 include ':utils'
 project(':utils').projectDir = file('../../common/utils')
+
+//include ":faaast.model"
+//project(':faaast.model').projectDir = file('../../faaast/faaast.model')

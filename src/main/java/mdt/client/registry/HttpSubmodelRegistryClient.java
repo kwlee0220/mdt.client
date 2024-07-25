@@ -7,6 +7,8 @@ import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.model.Endpoint;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
 
+import mdt.model.AASUtils;
+import mdt.model.ModelConverter;
 import mdt.model.registry.RegistryException;
 import mdt.model.registry.SubmodelRegistry;
 import okhttp3.OkHttpClient;
@@ -45,14 +47,14 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 
 	@Override
 	public SubmodelDescriptor getSubmodelDescriptorById(String submodelId) {
-		String url = String.format("%s/%s", m_endpoint, encodeBase64(submodelId));
+		String url = String.format("%s/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(submodelId));
 		
 		Request req = new Request.Builder().url(url).get().build();
 		return call(req, SubmodelDescriptor.class);
 	}
 
 	@Override
-	public SubmodelDescriptor addSubmodelDescriptor(SubmodelDescriptor desc) {
+	public SubmodelDescriptor postSubmodelDescriptor(SubmodelDescriptor desc) {
 		try {
 			RequestBody reqBody = createRequestBody(desc);
 			
@@ -65,8 +67,8 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 	}
 
 	@Override
-	public SubmodelDescriptor updateSubmodelDescriptorById(SubmodelDescriptor descriptor) {
-		String url = String.format("%s/%s", m_endpoint, encodeBase64(descriptor.getId()));
+	public SubmodelDescriptor putSubmodelDescriptorById(SubmodelDescriptor descriptor) {
+		String url = String.format("%s/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(descriptor.getId()));
 		try {
 			RequestBody reqBody = createRequestBody(descriptor);
 			
@@ -79,8 +81,8 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 	}
 
 	@Override
-	public void removeSubmodelDescriptorById(String submodelId) {
-		String url = String.format("%s/%s", m_endpoint, encodeBase64(submodelId));
+	public void deleteSubmodelDescriptorById(String submodelId) {
+		String url = String.format("%s/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(submodelId));
 		
 		Request req = new Request.Builder().url(url).delete().build();
 		send(req);
@@ -89,10 +91,10 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 	public void setSubmodelRepositoryEndpoint(List<String> submodelIdList, String endpoint) {
 		for ( String submodelId: submodelIdList ) {
 			SubmodelDescriptor desc = getSubmodelDescriptorById(submodelId);
-			Endpoint ep = RegistryModelConverter.createEndpoint(endpoint, "SUBMODEL-3.0");
+			Endpoint ep = ModelConverter.createEndpoint(endpoint, "SUBMODEL-3.0");
 			desc.setEndpoints(Arrays.asList(ep));
 			
-			updateSubmodelDescriptorById(desc);
+			putSubmodelDescriptorById(desc);
 		}
 	}
 	

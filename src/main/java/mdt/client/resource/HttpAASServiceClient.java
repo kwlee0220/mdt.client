@@ -8,6 +8,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.AssetInformation;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 
 import mdt.client.Fa3stHttpClient;
+import mdt.model.AASUtils;
 import mdt.model.registry.RegistryException;
 import mdt.model.service.AssetAdministrationShellService;
 import okhttp3.OkHttpClient;
@@ -35,7 +36,7 @@ public class HttpAASServiceClient extends Fa3stHttpClient implements AssetAdmini
 	}
 
 	@Override
-	public AssetAdministrationShell updateAssetAdministrationShell(AssetAdministrationShell aas) {
+	public AssetAdministrationShell putAssetAdministrationShell(AssetAdministrationShell aas) {
 		try {
 			RequestBody reqBody = createRequestBody(aas);
 			
@@ -56,7 +57,7 @@ public class HttpAASServiceClient extends Fa3stHttpClient implements AssetAdmini
 	}
 
 	@Override
-	public Reference addSubmodelReference(Reference ref) {
+	public Reference postSubmodelReference(Reference ref) {
 		try {
 			RequestBody reqBody = createRequestBody(ref);
 			
@@ -70,7 +71,7 @@ public class HttpAASServiceClient extends Fa3stHttpClient implements AssetAdmini
 
 	@Override
 	public void deleteSubmodelReference(String submodelId) {
-		String url = String.format("%s/submodels/%s", m_urlPrefix, encodeBase64(submodelId));
+		String url = String.format("%s/submodels/%s", m_urlPrefix, AASUtils.encodeBase64UrlSafe(submodelId));
 		
 		Request req = new Request.Builder().url(url).delete().build();
 		send(req);
@@ -85,7 +86,7 @@ public class HttpAASServiceClient extends Fa3stHttpClient implements AssetAdmini
 	}
 
 	@Override
-	public AssetInformation updateAssetInformation(AssetInformation assetInfo) {
+	public AssetInformation putAssetInformation(AssetInformation assetInfo) {
 		String url = String.format("%s/asset-information", m_urlPrefix);
 		try {
 			RequestBody reqBody = createRequestBody(assetInfo);

@@ -8,8 +8,8 @@ import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShell;
 import utils.stream.FStream;
 
 import mdt.client.Fa3stHttpClient;
-import mdt.client.Utils;
 import mdt.client.resource.HttpAASServiceClient;
+import mdt.model.AASUtils;
 import mdt.model.registry.RegistryException;
 import mdt.model.repository.AssetAdministrationShellRepository;
 import mdt.model.service.AssetAdministrationShellService;
@@ -48,7 +48,7 @@ public class HttpAASRepositoryClient extends Fa3stHttpClient
 
 	@Override
 	public HttpAASServiceClient getAssetAdministrationShellById(String aasId) {
-		String url = String.format("%s/%s", m_url, encodeBase64(aasId));
+		String url = String.format("%s/%s", m_url, AASUtils.encodeBase64UrlSafe(aasId));
 		
 		Request req = new Request.Builder().url(url).get().build();
 		AssetAdministrationShell aas = call(req, AssetAdministrationShell.class);
@@ -82,7 +82,7 @@ public class HttpAASRepositoryClient extends Fa3stHttpClient
 	}
 
 	@Override
-	public AssetAdministrationShellService addAssetAdministrationShell(AssetAdministrationShell aas) {
+	public AssetAdministrationShellService postAssetAdministrationShell(AssetAdministrationShell aas) {
 		try {
 			RequestBody reqBody = createRequestBody(aas);
 			
@@ -96,8 +96,8 @@ public class HttpAASRepositoryClient extends Fa3stHttpClient
 	}
 
 	@Override
-	public AssetAdministrationShellService updateAssetAdministrationShellById(AssetAdministrationShell aas) {
-		String url = String.format("%s/%s", m_url, encodeBase64(aas.getId()));
+	public AssetAdministrationShellService putAssetAdministrationShellById(AssetAdministrationShell aas) {
+		String url = String.format("%s/%s", m_url, AASUtils.encodeBase64UrlSafe(aas.getId()));
 		try {
 			RequestBody reqBody = createRequestBody(aas);
 			
@@ -111,15 +111,15 @@ public class HttpAASRepositoryClient extends Fa3stHttpClient
 	}
 
 	@Override
-	public void removeAssetAdministrationShellById(String aasId) {
-		String url = String.format("%s/%s", m_url, encodeBase64(aasId));
+	public void deleteAssetAdministrationShellById(String aasId) {
+		String url = String.format("%s/%s", m_url, AASUtils.encodeBase64UrlSafe(aasId));
 		
 		Request req = new Request.Builder().url(url).delete().build();
 		send(req);
 	}
 	
 	private HttpAASServiceClient toService(AssetAdministrationShell aas) {
-		String urlPrefix = String.format("%s/%s", m_url, Utils.encodeBase64(aas.getId()));
+		String urlPrefix = String.format("%s/%s", m_url, AASUtils.encodeBase64UrlSafe(m_url));
 		return new HttpAASServiceClient(getHttpClient(), urlPrefix);
 	}
 }

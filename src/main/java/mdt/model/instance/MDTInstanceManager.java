@@ -3,25 +3,21 @@ package mdt.model.instance;
 import java.io.File;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 
-import javax.annotation.Nullable;
+import utils.InternalException;
 
-import mdt.model.registry.AssetAdministrationShellRegistry;
-import mdt.model.registry.RegistryException;
 import mdt.model.registry.ResourceNotFoundException;
-import mdt.model.registry.ResourceNotReadyException;
-import mdt.model.registry.SubmodelRegistry;
-import mdt.model.service.AssetAdministrationShellService;
-import mdt.model.service.SubmodelService;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public interface MDTInstanceManager {
-	
+public interface MDTInstanceManager<T extends MDTInstance> {
+	public static final String CANONICAL_FA3ST_JAR_FILE = "faaast.starter-all.jar";
+	public static final String CANONICAL_MODEL_FILE = "model.json";
+	public static final String CANONICAL_CONF_FILE = "conf.json";
+    
 	/**
 	 * 주어진 식별자에 해당하는 {@link MDTInstance} 객체를 반환한다.
 	 * 
@@ -29,28 +25,53 @@ public interface MDTInstanceManager {
 	 * @return		식별자에 해당하는 {@link MDTInstance} 객체.
 	 * 				만일 식별자에 해당하는 MDT instance가 없는 경우는
 	 * 				{@link ResourceNotFoundException} 예외가 발생된다.
-	 * @throws ResourceNotFoundException
+	 * @throws MDTInstanceManagerException
 	 */
-	public MDTInstance getInstance(String id) throws ResourceNotFoundException;
+	public T getInstance(String id) throws MDTInstanceManagerException;
 	
-	public MDTInstance getInstanceByAasId(String aasId) throws ResourceNotFoundException;
-
-	/**
-	 * 주어진 식별자에 해당하는 {@link MDTInstance} 객체를 반환한다.
-	 * 만일 식별자에 해당하는 MDT instance가 없는 경우에는 {@code null}을 반환한다.
-	 * 
-	 * @param id	검색 대상 식별자.
-	 * @return		식별자에 해당하는 {@link MDTInstance} 객체.
-	 * 				만일 식별자에 해당하는 MDT instance가 없는 경우는 {@code null}.
-	 * @throws ResourceNotFoundException
-	 */
-	public default @Nullable MDTInstance getInstanceOrNull(String id) throws MDTInstanceManagerException {
-		try {
-			return getInstance(id);
+	public default T getInstanceByAasId(String aasId) throws ResourceNotFoundException,
+																		MDTInstanceManagerException {
+		String filter = String.format("instance.aasId = '%s'", aasId);
+		List<T> instList = getAllInstancesByFilter(filter);
+		if ( instList.size() == 1 ) {
+			return instList.get(0);
 		}
-		catch ( ResourceNotFoundException expected ) {
-			return null;
+		else if ( instList.size() == 0 ) {
+			throw new ResourceNotFoundException("MDTInstance", "aasId=" + aasId);
 		}
+		else {
+			throw new InternalException("multiple MDTInstances for aasId: " + aasId);
+		}
+	}
+	
+	public default List<T> getAllInstancesByAasIdShort(String idShort) throws MDTInstanceManagerException {
+		String filter = String.format("instance.aasIdShort = '%s'", idShort);
+		return getAllInstancesByFilter(filter);
+	}
+	
+	public default List<T> getAllInstancesByAssetId(String assetId) throws MDTInstanceManagerException {
+		String filter = String.format("instance.globalAssetId = '%s'", assetId);
+		return getAllInstancesByFilter(filter);
+	}
+	
+	public default T getAllInstancesBySubmodelId(String submodelId) throws ResourceNotFoundException,
+																		MDTInstanceManagerException {
+		String filter = String.format("submodel.id = '%s'", submodelId);
+		List<T> instList = getAllInstancesByFilter(filter);
+		if ( instList.size() == 1 ) {
+			return instList.get(0);
+		}
+		else if ( instList.size() == 0 ) {
+			throw new ResourceNotFoundException("Submodel", "id=" + submodelId);
+		}
+		else {
+			throw new InternalException("multiple MDTInstances for submodel-id: " + submodelId);
+		}
+	}
+	
+	public default List<T> getAllInstancesBySubmodelIdShort(String idShort) throws MDTInstanceManagerException {
+		String filter = String.format("submodel.idShort = '%s'", idShort);
+		return getAllInstancesByFilter(filter);
 	}
 	
 	/**
@@ -59,24 +80,9 @@ public interface MDTInstanceManager {
 	 * @return	등록된 {@link MDTInstance}들의 리스트.
 	 * @throws MDTInstanceManagerException
 	 */
-	public List<MDTInstance> getInstanceAll() throws MDTInstanceManagerException;
-	
-	public List<MDTInstance> getInstanceAllByIdShort(String aasIdShort) throws MDTInstanceManagerException;
-	
-	public default List<MDTInstance> getAllInstancesOfStatus(MDTInstanceStatus status)
-		throws MDTInstanceManagerException {
-		return getInstanceAll().stream()
-								.filter(inst -> inst.getStatus() == status)
-								.collect(Collectors.toList());
-	}
-	
-	public AssetAdministrationShellRegistry getAssetAdministrationShellRegistry();
-	public SubmodelRegistry getSubmodelRegistry();
-	
-	public AssetAdministrationShellService getAssetAdministrationShellService(String aasId)
-		throws ResourceNotFoundException, ResourceNotReadyException, RegistryException;
-	public SubmodelService getSubmodelService(String submodelId)
-		throws ResourceNotFoundException, ResourceNotReadyException, RegistryException;
+	public List<T> getAllInstances() throws MDTInstanceManagerException;
+
+	public List<T> getAllInstancesByFilter(String filterExpr) throws MDTInstanceManagerException;
 
 	/**
 	 * Docker에 저장된 image를 MDT instace로 등록시킨다.
@@ -92,7 +98,7 @@ public interface MDTInstanceManager {
 	 * @return 등록된 MDT Instace 객체.
 	 * @throws MDTInstanceManagerException	기타 다른 이유로 MDTInstance 등록에 실패한 경우.
 	 */
-	public MDTInstance addInstance(String id, File aasFile, String arguments)
+	public T addInstance(String id, File aasFile, String arguments)
 		throws MDTInstanceManagerException;
 	
 	/**

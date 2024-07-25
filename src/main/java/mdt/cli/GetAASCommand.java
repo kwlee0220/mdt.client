@@ -1,14 +1,16 @@
 package mdt.cli;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShell;
+import org.eclipse.digitaltwin.aas4j.v3.model.Environment;
 import org.eclipse.digitaltwin.aas4j.v3.model.Key;
 import org.eclipse.digitaltwin.aas4j.v3.model.LangStringNameType;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
+import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultEnvironment;
 import org.nocrala.tools.texttablefmt.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,10 +18,12 @@ import org.slf4j.LoggerFactory;
 import utils.stream.FStream;
 
 import mdt.client.MDTClientConfig;
-import mdt.client.registry.RegistryModelConverter;
-import mdt.model.instance.MDTInstance;
-import mdt.model.instance.MDTInstanceManager;
-import mdt.model.instance.MDTInstanceStatus;
+import mdt.client.instance.HttpMDTInstanceClient;
+import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.model.ModelConverter;
+import mdt.model.registry.ResourceNotFoundException;
+import mdt.model.service.AssetAdministrationShellService;
+import mdt.model.service.SubmodelService;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Help.Ansi;
@@ -31,21 +35,15 @@ import picocli.CommandLine.Parameters;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-@Command(name = "get", description = "get AssetAdministrationShell information.")
+@Command(name = "aas", description = "get AssetAdministrationShell information.")
 public class GetAASCommand extends MDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetAASCommand.class);
 
-	@Parameters(index="0..*", arity="0..1", paramLabel="id", description="AssetAdministrationShell id to show")
+	@Parameters(index="0", arity="1", paramLabel="id", description="AssetAdministrationShell id to show")
 	private String m_aasId = null;
 	
-	@Option(names={"--instance"}, paramLabel="id", description="MDTInstance id to show")
-	private String m_instanceId = null;
-	
-	@Option(names={"--id_short"}, paramLabel="id", description="Submodel id-short")
-	private String m_aasIdShort = null;
-	
 	@Option(names={"--output", "-o"}, paramLabel="type", required=false,
-			description="output type (candidnates: table or json)")
+			description="output type (candidnates: 'table', 'json' or 'env')")
 	private String m_output = "table";
 	
 	public GetAASCommand() {
@@ -54,41 +52,26 @@ public class GetAASCommand extends MDTCommand {
 
 	@Override
 	public void run(MDTClientConfig configs) throws Exception {
-		MDTInstanceManager mgr = this.createMDTInstanceManager(configs);
+		HttpMDTInstanceManagerClient mgr = this.createMDTInstanceManager(configs);
 		
-		MDTInstance instance = null;
-		if ( m_aasId != null ) {
+		HttpMDTInstanceClient instance = null;
+		try {
 			instance = mgr.getInstanceByAasId(m_aasId);
 		}
-		else if ( m_instanceId != null ) {
-			instance = mgr.getInstance(m_instanceId);
-		}
-		else if ( m_aasIdShort != null ) {
-			List<MDTInstance> instList = mgr.getInstanceAllByIdShort(m_aasIdShort)
-											.stream()
-											.filter(inst -> inst.getStatus() == MDTInstanceStatus.RUNNING)
-											.collect(Collectors.toList());
-			if ( instList.size() > 1 ) {
-				System.err.println("Multiple AssetAdministrationShells of idShort: " + m_aasIdShort
-									+ ", count=" + instList.size());
-				System.exit(-1);
-			}
-			else if ( instList.size() == 0 ) {
-				System.err.println("There is no AssetAdministration of idShort: " + m_aasIdShort);
-				System.exit(-1);
-			}
-			else {
+		catch ( ResourceNotFoundException expected ) {
+			List<HttpMDTInstanceClient> instList = mgr.getAllInstancesByAasIdShort(m_aasId);
+			if ( instList.size() == 1 ) {
 				instance = instList.get(0);
 			}
-		}
-		else {
-			System.out.printf("Target AssetAdministrationShell was not specified");
-			m_spec.commandLine().usage(System.out, Ansi.OFF);
-			return;
+			else  {
+				throw new ResourceNotFoundException("AssetAdministrationShell", "aasId=" + m_aasId);
+			}
 		}
 		
-		AssetAdministrationShell aas = instance.getAssetAdministrationShellService()
-												.getAssetAdministrationShell();
+//		AssetAdministrationShellService aasSvc = new HttpAASServiceClient(instance.getHttpClient(),
+//					"https://localhost:10501/api/v3.0/shells/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvYWFzL-uCtO2VqOqwgOyhsOumvQ==");
+		AssetAdministrationShellService aasSvc = instance.getAssetAdministrationShellService();
+		AssetAdministrationShell aas = aasSvc.getAssetAdministrationShell();
 			
 		m_output = m_output.toLowerCase();
 		if ( m_output == null || m_output.equalsIgnoreCase("table") ) {
@@ -96,6 +79,9 @@ public class GetAASCommand extends MDTCommand {
 		}
 		else if ( m_output.equalsIgnoreCase("json") ) {
 			displayAsJson(aas);
+		}
+		else if ( m_output.equalsIgnoreCase("env") ) {
+			displayEnvironment(instance, aas);
 		}
 		else {
 			System.err.println("Unknown output: " + m_output);
@@ -128,12 +114,28 @@ public class GetAASCommand extends MDTCommand {
 		System.out.println(ser.write(aas));
 	}
 	
-	private void displayAsSimple(AssetAdministrationShell aas, MDTInstance instance) {
+	private void displayEnvironment(HttpMDTInstanceClient instance, AssetAdministrationShell aas)
+		throws SerializationException {	
+		List<Submodel> submodels = FStream.from(instance.getSubmodelServices())
+											.map(SubmodelService::getSubmodel)
+											.toList();
+		Environment env = new DefaultEnvironment.Builder()
+								.assetAdministrationShells(aas)
+								.submodels(submodels)
+								.build();
+		
+		JsonSerializer ser = new JsonSerializer();
+		String jsonStr = ser.write(env);
+		System.out.println(jsonStr);
+	}
+	
+	private void displayAsSimple(AssetAdministrationShell aas, HttpMDTInstanceClient instance) {
 		Table table = new Table(2);
 
 		table.addCell(" FIELD "); table.addCell(" VALUE");
 		table.addCell(" ID "); table.addCell(" " + aas.getId());
 		table.addCell(" ID_SHORT "); table.addCell(" " + getOrEmpty(aas.getIdShort()) + " ");
+		
 		table.addCell(" GLOBAL_ASSET_ID ");
 			table.addCell(" " + getOrEmpty(aas.getAssetInformation().getGlobalAssetId()) + " ");
 		table.addCell(" INSTANCE "); table.addCell(" " + instance.getId());
@@ -154,12 +156,11 @@ public class GetAASCommand extends MDTCommand {
 				.map(Key::getValue)
 				.zipWithIndex()
 				.forEach(tup -> {
-					table.addCell(String.format(" SUB_MODEL_REF_[%02d] ", tup._2));
-					table.addCell(" " + tup._1 + " ");
+					table.addCell(String.format(" SUB_MODEL_REF_[%02d] ", tup.index()));
+					table.addCell(" " + tup.value() + " ");
 				});
-		
-		String url = RegistryModelConverter.getEndpointString(instance.getAssetAdministrationShellDescriptor().getEndpoints());
-		table.addCell(" ENDPOINT "); table.addCell(" " + getOrEmpty(url));
+		String aasEp = ModelConverter.toAASServiceEndpointString(instance.getEndpoint(), aas.getId());
+		table.addCell(" ENDPOINT "); table.addCell(" " + getOrEmpty(aasEp));
 		
 		System.out.println(table.render());
 	}

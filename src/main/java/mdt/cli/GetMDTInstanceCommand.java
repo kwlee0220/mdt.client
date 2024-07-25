@@ -10,9 +10,10 @@ import org.slf4j.LoggerFactory;
 import utils.stream.FStream;
 
 import mdt.client.MDTClientConfig;
+import mdt.client.instance.HttpMDTInstanceClient;
+import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.IdPair;
 import mdt.model.instance.MDTInstance;
-import mdt.model.instance.MDTInstanceManager;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Help.Ansi;
@@ -23,7 +24,7 @@ import picocli.CommandLine.Parameters;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-@Command(name = "get", description = "get MDTInstance runtime information.")
+@Command(name = "instance", description = "get MDTInstance runtime information.")
 public class GetMDTInstanceCommand extends MDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetMDTInstanceCommand.class);
 	
@@ -31,7 +32,7 @@ public class GetMDTInstanceCommand extends MDTCommand {
 	private String m_instanceId;
 	
 	@Option(names={"--output", "-o"}, paramLabel="type", required=false,
-			description="output type (candidnates: table or json)")
+			description="output type (candidnates: 'table' or 'json')")
 	private String m_output = "table";
 	
 	public GetMDTInstanceCommand() {
@@ -40,8 +41,8 @@ public class GetMDTInstanceCommand extends MDTCommand {
 
 	@Override
 	public void run(MDTClientConfig configs) throws Exception {
-		MDTInstanceManager mgr = this.createMDTInstanceManager(configs);
-		MDTInstance instance = mgr.getInstance(m_instanceId);
+		HttpMDTInstanceManagerClient mdtClient = this.createMDTInstanceManager(configs);
+		HttpMDTInstanceClient instance = mdtClient.getInstance(m_instanceId);
 		
 		m_output = m_output.toLowerCase();
 		if ( m_output == null || m_output.equalsIgnoreCase("table") ) {
@@ -77,35 +78,35 @@ public class GetMDTInstanceCommand extends MDTCommand {
 	}
 	
 	private void displayAsJson(MDTInstance instance) throws SerializationException {
-		AssetAdministrationShellDescriptor desc = instance.getAssetAdministrationShellDescriptor();
+		AssetAdministrationShellDescriptor desc = instance.getAASDescriptor();
 		
 		JsonSerializer ser = new JsonSerializer();
 		String jsonStr = ser.write(desc);
 		System.out.println(jsonStr);
 	}
 	
-	private void displayAsTable(MDTInstance instance) {
+	private void displayAsTable(HttpMDTInstanceClient instance) {
 		Table table = new Table(2);
 
 		table.addCell(" FIELD "); table.addCell(" VALUE");
 		table.addCell(" INSTANCE "); table.addCell(" " + instance.getId());
 		
-		AssetAdministrationShellDescriptor aasDesc = instance.getAssetAdministrationShellDescriptor();
+		AssetAdministrationShellDescriptor aasDesc = instance.getAASDescriptor();
 		table.addCell(" AAS_ID "); table.addCell(" " + IdPair.of(aasDesc.getId(), aasDesc.getIdShort()) + " ");
 		table.addCell(" ID_SHORT "); table.addCell(" " + getOrEmpty(aasDesc.getIdShort()) + " ");
+		table.addCell(" GLOBAL_ASSET_ID "); table.addCell(" " + getOrEmpty(aasDesc.getGlobalAssetId()) + " ");
 		table.addCell(" ASSET_TYPE "); table.addCell(" " + getOrEmpty(aasDesc.getAssetType()) + " ");
 		table.addCell(" ASSET_KIND "); table.addCell(" " + getOrEmpty(aasDesc.getAssetKind()) + " ");
-		table.addCell(" GLOBAL_ASSET_ID "); table.addCell(" " + getOrEmpty(aasDesc.getGlobalAssetId()) + " ");
-		FStream.from(instance.getAllSubmodelDescriptors())
+		FStream.from(instance.getInstanceSubmodelDescriptors())
 				.map(smd -> IdPair.of(smd.getId(), smd.getIdShort()))
 				.zipWithIndex()
 				.forEach(tup -> {
-					table.addCell(String.format(" SUB_MODEL[%02d] ", tup._2));
-					table.addCell(" " + tup._1 + " ");
+					table.addCell(String.format(" SUB_MODEL[%02d] ", tup.index()));
+					table.addCell(" " + tup.value() + " ");
 				});
 		table.addCell(" STATUS "); table.addCell(" " + instance.getStatus().toString());
-		String epStr = instance.getServiceEndpoint();
-		epStr = (epStr != null) ? instance.getServiceEndpoint() : "";
+		String epStr = instance.getEndpoint();
+		epStr = (epStr != null) ? instance.getEndpoint() : "";
 		table.addCell(" ENDPOINT "); table.addCell(" " + epStr);
 		
 		System.out.println(table.render());

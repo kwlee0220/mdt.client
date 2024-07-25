@@ -12,12 +12,12 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
  */
 public interface AssetAdministrationShellService {
 	public AssetAdministrationShell getAssetAdministrationShell();
-	public AssetAdministrationShell updateAssetAdministrationShell(AssetAdministrationShell aas);
+	public AssetAdministrationShell putAssetAdministrationShell(AssetAdministrationShell aas);
 
 	public List<Reference> getAllSubmodelReferences();
-	public Reference addSubmodelReference(Reference ref);
+	public Reference postSubmodelReference(Reference ref);
 	public void deleteSubmodelReference(String submodelId);
 	
 	public AssetInformation getAssetInformation();
-	public AssetInformation updateAssetInformation(AssetInformation assetInfo);
+	public AssetInformation putAssetInformation(AssetInformation assetInfo);
 }

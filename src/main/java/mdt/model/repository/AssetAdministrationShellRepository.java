@@ -16,7 +16,7 @@ public interface AssetAdministrationShellRepository {
 	public List<AssetAdministrationShellService> getAssetAdministrationShellByAssetId(String key);
 	public List<AssetAdministrationShellService> getAssetAdministrationShellByIdShort(String idShort);
 	
-	public AssetAdministrationShellService addAssetAdministrationShell(AssetAdministrationShell aas);
-	public AssetAdministrationShellService updateAssetAdministrationShellById(AssetAdministrationShell aas);
-	public void removeAssetAdministrationShellById(String id);
+	public AssetAdministrationShellService postAssetAdministrationShell(AssetAdministrationShell aas);
+	public AssetAdministrationShellService putAssetAdministrationShellById(AssetAdministrationShell aas);
+	public void deleteAssetAdministrationShellById(String id);
 }

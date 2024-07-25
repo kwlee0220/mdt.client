@@ -16,8 +16,8 @@ public interface SubmodelRepository {
 	public List<SubmodelService> getAllSubmodelBySemanticId(String semanticId);
 	public List<SubmodelService> getAllSubmodelsByIdShort(String idShort);
 	
-	public SubmodelService addSubmodel(Submodel submodel);
-	public SubmodelService updateSubmodelById(Submodel submodel);
-	public void removeSubmodelById(String id);
+	public SubmodelService postSubmodel(Submodel submodel);
+	public SubmodelService putSubmodelById(Submodel submodel);
+	public void deleteSubmodelById(String id);
 	
 }

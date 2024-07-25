@@ -7,11 +7,10 @@ import org.barfuin.texttree.api.TreeOptions;
 import org.barfuin.texttree.api.style.TreeStyles;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
-import org.eclipse.digitaltwin.aas4j.v3.model.Endpoint;
 import org.eclipse.digitaltwin.aas4j.v3.model.LangStringNameType;
 import org.eclipse.digitaltwin.aas4j.v3.model.LangStringTextType;
+import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
-import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
 import org.nocrala.tools.texttablefmt.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,13 +19,10 @@ import utils.stream.FStream;
 
 import mdt.cli.tree.SubmodelNode;
 import mdt.client.MDTClientConfig;
-import mdt.client.SSLUtils;
-import mdt.client.registry.RegistryModelConverter;
-import mdt.client.resource.HttpSubmodelServiceClient;
-import mdt.model.instance.MDTInstance;
-import mdt.model.instance.MDTInstanceManager;
+import mdt.client.instance.HttpMDTInstanceClient;
+import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.model.registry.ResourceNotFoundException;
 import mdt.model.service.SubmodelService;
-import okhttp3.OkHttpClient;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Help.Ansi;
@@ -37,21 +33,18 @@ import picocli.CommandLine.Parameters;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-@Command(name = "get", description = "get Submodel information.")
+@Command(name = "submodel", description = "get Submodel information.")
 public class GetSubmodelCommand extends MDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetSubmodelCommand.class);
 
-	@Parameters(index="0..*", arity="0..1", paramLabel="id", description="Submodel id to show")
+	@Parameters(index="0", arity="1", paramLabel="id", description="Submodel id to show")
 	private String m_submodelId = null;
 	
-	@Option(names={"--instance"}, paramLabel="id", description="MDTInstance id to show")
-	private String m_instanceId = null;
-	
-	@Option(names={"--id_short"}, paramLabel="id", description="Submodel id-short")
-	private String m_submodelIdShort = null;
+	@Option(names={"--mdt"}, paramLabel="id", description="MDTInstance id to show")
+	private String m_mdtId = null;
 	
 	@Option(names={"--output", "-o"}, paramLabel="type", required=false,
-			description="output type (candidnates: table or json)")
+			description="output type (candidnates: table, json, or tree)")
 	private String m_output = "table";
 	
 	public GetSubmodelCommand() {
@@ -60,65 +53,31 @@ public class GetSubmodelCommand extends MDTCommand {
 
 	@Override
 	public void run(MDTClientConfig configs) throws Exception {
-		MDTInstanceManager mgr = this.createMDTInstanceManager(configs);
+		HttpMDTInstanceManagerClient client = this.createMDTInstanceManager(configs);
 		
-		String submodelUrl = null;
-		if ( m_submodelId != null ) {
-			List<Endpoint> eps = mgr.getSubmodelRegistry()
-									.getSubmodelDescriptorById(m_submodelId)
-									.getEndpoints();
-			submodelUrl = RegistryModelConverter.getEndpointString(eps);
+		SubmodelService submodelSvc = null;
+		try {
+			HttpMDTInstanceClient inst = client.getAllInstancesBySubmodelId(m_submodelId);
+			submodelSvc = inst.getSubmodelServiceById(m_submodelId);
 		}
-		else if ( m_submodelIdShort != null ) {
-			if ( m_instanceId != null ) {
-				MDTInstance inst = mgr.getInstance(m_instanceId);
-				submodelUrl = mgr.getAssetAdministrationShellRegistry()
-									.getAssetAdministrationShellDescriptorById(inst.getAASId())
-									.getSubmodelDescriptors()
-									.stream()
-									.filter(d -> m_submodelIdShort.equals(d.getIdShort()))
-									.findAny()
-									.map(d -> RegistryModelConverter.getEndpointString(d.getEndpoints()))
-									.orElse(null);
+		catch ( ResourceNotFoundException expected ) {
+			if ( m_mdtId == null ) {
+				System.err.printf("Unknown Submodel id: %s", m_submodelId);
+				System.exit(-1);
 			}
-			else {
-				List<SubmodelDescriptor> smDescList = mgr.getSubmodelRegistry()
-															.getAllSubmodelDescriptorsByIdShort(m_submodelIdShort);
-				if ( smDescList.size() > 1 ) {
-					System.err.println("Multiple Submodels of idShort: " + m_submodelIdShort
-										+ ", count=" + smDescList.size());
-					System.exit(-1);
-				}
-				else if ( smDescList.size() == 0 ) {
-					System.err.println("There is no Submodels of idShort: " + m_submodelIdShort);
-					System.exit(-1);
-				}
-				else {
-					submodelUrl = RegistryModelConverter.getEndpointString(smDescList.get(0).getEndpoints());
-				}
-			}
+			HttpMDTInstanceClient inst = client.getInstance(m_mdtId);
+			submodelSvc = inst.getSubmodelServiceByIdShort(m_submodelId);
 		}
-		else {
-			System.err.println("Submodel id is not specified");
-			System.exit(-1);
-		}
-		
-		if ( submodelUrl == null ) {
-			return;
-		}
-		
-		OkHttpClient client = SSLUtils.newTrustAllOkHttpClientBuilder().build();
-		SubmodelService submodel = new HttpSubmodelServiceClient(client, submodelUrl);
 			
 		m_output = m_output.toLowerCase();
 		if ( m_output == null || m_output.equalsIgnoreCase("table") ) {
-			displayAsSimple(submodel);
+			displayAsSimple(submodelSvc);
 		}
 		else if ( m_output.equalsIgnoreCase("json") ) {
-			displayAsJson(submodel);
+			displayAsJson(submodelSvc);
 		}
 		else if ( m_output.equalsIgnoreCase("tree") ) {
-			displayAsTree(submodel);
+			displayAsTree(submodelSvc);
 		}
 		else {
 			System.err.println("Unknown output: " + m_output);
@@ -162,13 +121,20 @@ public class GetSubmodelCommand extends MDTCommand {
 		table.addCell(" FIELD "); table.addCell(" VALUE");
 		table.addCell(" ID "); table.addCell(" " + submodel.getId());
 		table.addCell(" ID_SHORT "); table.addCell(" " + getOrEmpty(submodel.getIdShort()) + " ");
+		
+		table.addCell(" SEMANTIC_ID ");
+		Reference semanticId = submodel.getSemanticId();
+		if ( semanticId != null ) {
+			String id = semanticId.getKeys().get(0).getValue();
+			table.addCell(" " + id);
+		}
 
 		FStream.from(submodel.getSubmodelElements())
 				.map(sme -> sme.getIdShort())
 				.zipWithIndex()
 				.forEach(tup -> {
-					table.addCell(String.format(" SUB_MODEL_ELEMENT[%02d] ", tup._2));
-					table.addCell(" " + tup._1 + " ");
+					table.addCell(String.format(" SUB_MODEL_ELEMENT[%02d] ", tup.index()));
+					table.addCell(" " + tup.value() + " ");
 				});
 		
 		List<LangStringNameType> names = submodel.getDisplayName();

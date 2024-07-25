@@ -20,7 +20,8 @@ import utils.stream.FStream;
 
 import mdt.cli.tree.SubmodelElementNodeFactory;
 import mdt.client.MDTClientConfig;
-import mdt.model.instance.MDTInstanceManager;
+import mdt.client.instance.HttpMDTInstanceClient;
+import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.service.SubmodelService;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -52,7 +53,7 @@ public class GetPropertyCommand extends MDTCommand {
 
 	@Override
 	public void run(MDTClientConfig configs) throws Exception {
-		MDTInstanceManager mgr = this.createMDTInstanceManager(configs);
+		HttpMDTInstanceManagerClient mgr = this.createMDTInstanceManager(configs);
 		
 		TreeOptions opts = new TreeOptions();
 		opts.setStyle(TreeStyles.UNICODE_ROUNDED);
@@ -63,7 +64,8 @@ public class GetPropertyCommand extends MDTCommand {
 			StopWatch watch = StopWatch.start();
 			
 			try {
-				SubmodelService svc = mgr.getSubmodelService(m_submodelId);
+				HttpMDTInstanceClient inst = mgr.getAllInstancesBySubmodelId(m_submodelId);
+				SubmodelService svc = inst.getSubmodelServiceById(m_submodelId);
 				List<SubmodelElement> smeList = FStream.from(m_idPathList)
 														.mapOrIgnore(svc::getSubmodelElementByPath)
 														.toList();
@@ -119,7 +121,7 @@ public class GetPropertyCommand extends MDTCommand {
 		@Override
 		public Iterable<? extends Node> getChildren() {
 			return FStream.from(m_smeList)
-							.map(sme -> SubmodelElementNodeFactory.toNode(sme, null))
+							.map(sme -> SubmodelElementNodeFactory.toNode("", sme))
 							.filter(n -> n != null);
 		}
 	}

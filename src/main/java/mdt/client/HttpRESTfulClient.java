@@ -1,15 +1,17 @@
 package mdt.client;
 
 import java.io.IOException;
-import java.util.Base64;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
-import mdt.model.InternalException;
+import utils.InternalException;
+import utils.func.Tuple;
+
 import mdt.model.MDTExceptionEntity;
+import okhttp3.Headers;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -59,6 +61,16 @@ public class HttpRESTfulClient {
 		}
 	}
 
+	public <T> Tuple<Headers,T> callAndGetHeaders(Request req, TypeReference<T> typeRef) {
+		try {
+			Response resp =  m_client.newCall(req).execute();
+			return Tuple.of(resp.headers(), parseResponse(resp, typeRef));
+		}
+		catch ( IOException e ) {
+			throw new MDTClientException("" + e);
+		}
+	}
+
 	public void send(Request req) {
 		try {
 			Response resp =  m_client.newCall(req).execute();
@@ -71,11 +83,7 @@ public class HttpRESTfulClient {
 		}
 	}
 	
-	protected String encodeBase64(String input) {
-		return Base64.getEncoder().encodeToString(input.getBytes());
-	}
-	
-	private <T> T parseResponse(Response resp, TypeReference<T> typeRef) throws MDTClientException {
+	public <T> T parseResponse(Response resp, TypeReference<T> typeRef) throws MDTClientException {
 		try {
 			String respBody = resp.body().string();
 			if ( resp.isSuccessful() ) {

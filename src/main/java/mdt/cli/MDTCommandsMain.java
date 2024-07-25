@@ -2,10 +2,10 @@ package mdt.cli;
 
 import java.util.List;
 
-import mdt.cli.MDTCommandsMain.AASCommand;
-import mdt.cli.MDTCommandsMain.MDTInstanceCommand;
-import mdt.cli.MDTCommandsMain.PropertyCommand;
-import mdt.cli.MDTCommandsMain.SubmodelCommand;
+import utils.UsageHelp;
+
+import mdt.cli.MDTCommandsMain.GetCommand;
+import mdt.cli.MDTCommandsMain.SimulationCommand;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.DefaultExceptionHandler;
@@ -15,7 +15,6 @@ import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.RunLast;
 import picocli.CommandLine.Spec;
-import utils.UsageHelp;
 
 /**
  * 
@@ -26,10 +25,13 @@ import utils.UsageHelp;
 		optionListHeading = "Options:%n",
 		description="Manufactoring DigitalTwin (MDT) related commands",
 		subcommands = {
-			MDTInstanceCommand.class,
-			AASCommand.class,
-			SubmodelCommand.class,
-			PropertyCommand.class,
+			ListMDTInstanceAllCommand.class,
+			GetCommand.class,
+			StartMDTInstanceCommand.class,
+			SimulationCommand.class,
+			AddMDTInstanceCommand.class,
+			RemoveMDTInstanceCommand.class,
+			StopMDTInstanceCommand.class,
 		})
 public class MDTCommandsMain implements Runnable {
 	@Spec private CommandSpec m_spec;
@@ -51,17 +53,31 @@ public class MDTCommandsMain implements Runnable {
 //		CommandLine.run(main, System.out, System.err, Help.Ansi.OFF, args);
 	}
 
-	@Command(name="instance",
+	@Command(name="get",
 			description="MDT Instance related commands",
 			subcommands= {
-				ListMDTInstanceAllCommand.class,
 				GetMDTInstanceCommand.class,
-				AddMDTInstanceCommand.class,
-				RemoveMDTInstanceCommand.class,
-				StartMDTInstanceCommand.class,
-				StopMDTInstanceCommand.class,
+				GetAASCommand.class,
+				GetSubmodelCommand.class,
+				GetKSX9101Command.class,
 			})
-	public static class MDTInstanceCommand implements Runnable {
+	public static class GetCommand implements Runnable {
+		@Spec private CommandSpec m_spec;
+		@Mixin private UsageHelp m_help;
+		
+		@Override
+		public void run() {
+			m_spec.commandLine().usage(System.out, Ansi.OFF);
+		}
+	}
+
+	@Command(name="simulation",
+			description="MDT Simulation related commands",
+			subcommands= {
+				StartSimulationCommand.class,
+				CancelSimulationCommand.class,
+			})
+	public static class SimulationCommand implements Runnable {
 		@Spec private CommandSpec m_spec;
 		@Mixin private UsageHelp m_help;
 		
@@ -75,7 +91,6 @@ public class MDTCommandsMain implements Runnable {
 			description="AssetAdministrationShell related commands",
 			subcommands= {
 				ListAASAllCommand.class,
-				GetAASCommand.class,
 			})
 	public static class AASCommand implements Runnable {
 		@Spec private CommandSpec m_spec;
@@ -91,7 +106,6 @@ public class MDTCommandsMain implements Runnable {
 			description="Submodel related commands",
 			subcommands= {
 				ListSubmodelAllCommand.class,
-				GetSubmodelCommand.class,
 			})
 	public static class SubmodelCommand implements Runnable {
 		@Spec private CommandSpec m_spec;
@@ -109,6 +123,21 @@ public class MDTCommandsMain implements Runnable {
 				GetPropertyCommand.class,
 			})
 	public static class PropertyCommand implements Runnable {
+		@Spec private CommandSpec m_spec;
+		@Mixin private UsageHelp m_help;
+		
+		@Override
+		public void run() {
+			m_spec.commandLine().usage(System.out, Ansi.OFF);
+		}
+	}
+
+	@Command(name="ksx9101",
+			description="KSX 9101 Property related commands",
+			subcommands= {
+				GetKSX9101Command.class,
+			})
+	public static class KSX9101Command implements Runnable {
 		@Spec private CommandSpec m_spec;
 		@Mixin private UsageHelp m_help;
 		

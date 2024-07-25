@@ -15,9 +15,9 @@ import utils.func.FOption;
 import utils.stream.FStream;
 
 import mdt.client.MDTClientConfig;
+import mdt.client.instance.HttpMDTInstanceClient;
+import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.instance.MDTInstance;
-import mdt.model.instance.MDTInstanceManager;
-import mdt.model.repository.SubmodelRepository;
 import mdt.model.service.SubmodelService;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -44,21 +44,21 @@ public class ListSubmodelAllCommand extends MDTCommand {
 
 	@Override
 	public void run(MDTClientConfig configs) throws Exception {
-		MDTInstanceManager mgr = this.createMDTInstanceManager(configs);
+		HttpMDTInstanceManagerClient mdtClient = this.createMDTInstanceManager(configs);
 		if ( m_long ) {
 			if ( m_tableFormat ) {
-				displayLongAsTable(mgr);
+				displayLongAsTable(mdtClient);
 			}
 			else {
-				displayLongNoTable(mgr);
+				displayLongNoTable(mdtClient);
 			}
 		}
 		else {
 			if ( m_tableFormat ) {
-				displayShortTable(mgr);
+				displayShortTable(mdtClient);
 			}
 			else {
-				displayShortNoTable(mgr);
+				displayShortNoTable(mdtClient);
 			}
 		}
 	}
@@ -83,23 +83,23 @@ public class ListSubmodelAllCommand extends MDTCommand {
 		}
 	}
 	
-	private void displayShortNoTable(MDTInstanceManager instanceMgr) {
-		for ( MDTInstance inst : instanceMgr.getInstanceAll() ) {
-			for ( SubmodelDescriptor smDesc: inst.getAllSubmodelDescriptors() ) {
-				System.out.println(FStream.of(toShortColumns(smDesc)).join('|'));
-			}
-		}
+	private void displayShortNoTable(HttpMDTInstanceManagerClient mdtClient) {
+		FStream.from(mdtClient.getAllInstances())
+				.flatMapIterable(inst -> inst.getSubmodelDescriptors())
+				.forEach(smDesc -> {
+					System.out.println(FStream.of(toShortColumns(smDesc)).join('|'));
+				});
 	}
 	
-	private void displayShortTable(MDTInstanceManager instanceMgr) {
+	private void displayShortTable(HttpMDTInstanceManagerClient mdtClient) {
 		Table table = new Table(3);
 		table.setColumnWidth(1, 20, 70);
 		
 		table.addCell(" ID ");
 		table.addCell(" ID_SHORT ");
 		table.addCell(" ENDPOINT ");
-		for ( MDTInstance inst : instanceMgr.getInstanceAll() ) {
-			for ( SubmodelDescriptor smDesc: inst.getAllSubmodelDescriptors() ) {
+		for ( HttpMDTInstanceClient inst : mdtClient.getAllInstances() ) {
+			for ( SubmodelDescriptor smDesc: inst.getSubmodelDescriptors() ) {
 				FStream.of(toShortColumns(smDesc))
 						.forEach(table::addCell);
 			}
@@ -107,22 +107,21 @@ public class ListSubmodelAllCommand extends MDTCommand {
 		System.out.println(table.render());
 	}
 	
-	private void displayLongNoTable(MDTInstanceManager instanceMgr) {
+	private void displayLongNoTable(HttpMDTInstanceManagerClient mdtClient) {
 		Map<String, SubmodelDescriptor> descMap
-									= FStream.from(instanceMgr.getInstanceAll())
-											.flatMapIterable(MDTInstance::getAllSubmodelDescriptors)
+									= FStream.from(mdtClient.getAllInstances())
+											.flatMapIterable(MDTInstance::getSubmodelDescriptors)
 											.toMap(desc -> getEndpointHref(desc.getEndpoints()));
 	
-		for ( MDTInstance inst : instanceMgr.getInstanceAll() ) {
-			SubmodelRepository submodelRepo = inst.getSubmodelRepository();
-			for ( SubmodelService submodelSvc: submodelRepo.getAllSubmodels() ) {
+		for ( MDTInstance inst : mdtClient.getAllInstances() ) {
+			for ( SubmodelService submodelSvc: inst.getSubmodelServices() ) {
 				Submodel submodel = submodelSvc.getSubmodel();
 				System.out.println(FStream.of(toLongColumns(submodel, descMap)).join('|'));
 			}
 		}
 	}
 	
-	private void displayLongAsTable(MDTInstanceManager instanceMgr) {
+	private void displayLongAsTable(HttpMDTInstanceManagerClient instanceMgr) {
 		Table table = new Table(5);
 		table.setColumnWidth(1, 20, 70);
 		table.setColumnWidth(3, 10, 50);
@@ -134,13 +133,12 @@ public class ListSubmodelAllCommand extends MDTCommand {
 		table.addCell(" ENDPOINT ");
 		
 		Map<String, SubmodelDescriptor> descMap
-									= FStream.from(instanceMgr.getInstanceAll())
-											.flatMapIterable(MDTInstance::getAllSubmodelDescriptors)
+									= FStream.from(instanceMgr.getAllInstances())
+											.flatMapIterable(MDTInstance::getSubmodelDescriptors)
 											.toMap(desc -> getEndpointHref(desc.getEndpoints()));
 		
-		for ( MDTInstance inst : instanceMgr.getInstanceAll() ) {
-			SubmodelRepository submodelRepo = inst.getSubmodelRepository();
-			for ( SubmodelService submodelSvc: submodelRepo.getAllSubmodels() ) {
+		for ( MDTInstance inst : instanceMgr.getAllInstances() ) {
+			for ( SubmodelService submodelSvc: inst.getSubmodelServices() ) {
 				Submodel submodel = submodelSvc.getSubmodel();
 				FStream.of(toLongColumns(submodel, descMap)).forEach(table::addCell);
 			}

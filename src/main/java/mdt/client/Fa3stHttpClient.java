@@ -2,7 +2,6 @@ package mdt.client;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.util.Base64;
 import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.DeserializationException;
@@ -14,8 +13,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
+import utils.func.Tuple;
+
 import mdt.model.registry.RegistryException;
 import mdt.model.registry.RegistryExceptionEntity;
+import mdt.model.registry.ResourceNotFoundException;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -43,10 +45,6 @@ public class Fa3stHttpClient {
 		return m_client;
 	}
 	
-	protected String encodeBase64(String input) {
-		return Base64.getEncoder().encodeToString(input.getBytes());
-	}
-	
 	protected RequestBody createRequestBody(Object desc) throws SerializationException {
 		String reqBodyStr = m_ser.write(desc);
 		return RequestBody.create(reqBodyStr, JSON);
@@ -56,6 +54,22 @@ public class Fa3stHttpClient {
 		try {
 			Response resp =  m_client.newCall(req).execute();
 			return parseResponse(resp, resultCls);
+		}
+		catch ( IOException e ) {
+			throw new MDTClientException("" + e);
+		}
+	}
+
+	protected <T> Tuple<String,T> callAsync(Request req, Class<T> resultCls) {
+		try {
+			Response resp =  m_client.newCall(req).execute();
+			T result = parseResponse(resp, resultCls);
+			if ( resp.code() == 202 ) {
+				return Tuple.of(resp.header("Location"), result);
+			}
+			else {
+				return Tuple.of(null, result);
+			}
 		}
 		catch ( IOException e ) {
 			throw new MDTClientException("" + e);
@@ -76,7 +90,7 @@ public class Fa3stHttpClient {
 		try {
 			Response resp =  m_client.newCall(req).execute();
 			if ( !resp.isSuccessful() ) {
-				throwErrorResponse(resp.body().string());
+				throwErrorResponse(resp, resp.body().string());
 			}
 		}
 		catch ( IOException e ) {
@@ -87,17 +101,28 @@ public class Fa3stHttpClient {
 	private <T> T parseResponse(Response resp, Class<T> valueType)
 		throws RegistryException, MDTClientException {
 		try {
-			String respBody = resp.body().string();
 			if ( resp.isSuccessful() ) {
-				return m_deser.read(respBody, valueType);
+				if ( resp.code() != 204 ) {
+					String respBody = resp.body().string();
+					if ( respBody.length() > 0 ) {
+						return m_deser.read(respBody, valueType);
+					}
+					else {
+						return null;
+					}
+				}
+				else {
+					return null;
+				}
 			}
 			else {
-				throwErrorResponse(respBody);
+				String respBody = resp.body().string();
+				throwErrorResponse(resp, respBody);
 				throw new AssertionError();
 			}
 		}
 		catch ( IOException | DeserializationException e ) {
-			throw new MDTClientException(resp.toString());
+			throw new MDTClientException(e.toString());
 		}
 	}
 	
@@ -112,7 +137,7 @@ public class Fa3stHttpClient {
 				return m_deser.readList(result, valueType);
 			}
 			else {
-				throwErrorResponse(respBody);
+				throwErrorResponse(resp, respBody);
 				throw new AssertionError();
 			}
 		}
@@ -126,11 +151,19 @@ public class Fa3stHttpClient {
 		private List<RegistryExceptionEntity> m_messages;
 	}
 	
-	private void throwErrorResponse(String respBody) throws RegistryException, MDTClientException {
+	private void throwErrorResponse(Response resp, String respBody)
+		throws RegistryException, MDTClientException {
 		RegistryExceptionEntity msg = null;
+		
 		try {
 			Messages msgs = m_deser.read(respBody, Messages.class);
 			msg = msgs.m_messages.get(0);
+			if ( msg.getCode().length() == 0 ) {
+				if ( resp.code() == 404 ) {
+					throw new ResourceNotFoundException(msg.getText());
+				}
+			}
+			
 			Class<? extends Throwable> cls = (Class<? extends Throwable>) Class.forName(msg.getCode());
 			Constructor<? extends Throwable> ctor = cls.getConstructor(String.class);
 			throw (RuntimeException)ctor.newInstance(msg.getText());

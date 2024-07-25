@@ -29,8 +29,8 @@ public abstract class HomeDirPicocliCommand implements Runnable, LoggerSettable 
 	@Spec protected CommandSpec m_spec;
 	@Mixin private UsageHelp m_help;
 	
-	@Option(names={"--working_dir", "-w"}, description="Use the current working directory for home directory")
-	private boolean m_useWorkingDir = false;
+//	@Option(names={"--working_dir", "-w"}, description="Use the current working directory for home directory")
+//	private boolean m_useWorkingDir = false;
 	
 	private final FOption<String> m_homeDirEnvVarName;
 	private Path m_homeDir = null;
@@ -66,15 +66,15 @@ public abstract class HomeDirPicocliCommand implements Runnable, LoggerSettable 
 			}
 		}
 		if ( m_homeDir == null ) {
-			if ( m_useWorkingDir ) {
-				m_homeDir = Utilities.getCurrentWorkingDir().toPath();
-			}
-			else {
-				m_homeDir = m_homeDirEnvVarName
-									.flatMap(env -> FOption.ofNullable(System.getenv(env)))
-									.map(Paths::get)
-									.getOrElse(Utilities.getUserHomeDir().toPath());
-			}
+//			if ( m_useWorkingDir ) {
+//				m_homeDir = Utilities.getCurrentWorkingDir().toPath();
+//			}
+//			else {
+			m_homeDir = m_homeDirEnvVarName
+								.flatMap(env -> FOption.ofNullable(System.getenv(env)))
+								.map(Paths::get)
+								.getOrElse(Utilities.getUserHomeDir().toPath());
+//			}
 		}
 		
 		return m_homeDir;

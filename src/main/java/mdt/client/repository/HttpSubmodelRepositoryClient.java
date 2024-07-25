@@ -10,8 +10,8 @@ import com.google.common.base.Preconditions;
 import utils.stream.FStream;
 
 import mdt.client.Fa3stHttpClient;
-import mdt.client.Utils;
 import mdt.client.resource.HttpSubmodelServiceClient;
+import mdt.model.AASUtils;
 import mdt.model.registry.RegistryException;
 import mdt.model.repository.SubmodelRepository;
 import mdt.model.service.SubmodelService;
@@ -46,7 +46,7 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 	public SubmodelService getSubmodelById(String submodelId) {
 		Preconditions.checkNotNull(submodelId);
 		
-		String url = String.format("%s/%s", m_url, encodeBase64(submodelId));
+		String url = String.format("%s/%s", m_url, AASUtils.encodeBase64UrlSafe(submodelId));
 		
 		Request req = new Request.Builder().url(url).get().build();
 		Submodel submodel = call(req, Submodel.class);
@@ -80,7 +80,7 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 	}
 	
 	@Override
-	public HttpSubmodelServiceClient addSubmodel(Submodel submodel) {
+	public HttpSubmodelServiceClient postSubmodel(Submodel submodel) {
 		Preconditions.checkNotNull(submodel);
 		
 		try {
@@ -96,10 +96,10 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 	}
 	
 	@Override
-	public HttpSubmodelServiceClient updateSubmodelById(Submodel submodel) {
+	public HttpSubmodelServiceClient putSubmodelById(Submodel submodel) {
 		Preconditions.checkNotNull(submodel);
 		
-		String url = String.format("%s/%s", m_url, encodeBase64(submodel.getId()));
+		String url = String.format("%s/%s", m_url, AASUtils.encodeBase64UrlSafe(submodel.getId()));
 		try {
 			RequestBody reqBody = createRequestBody(submodel);
 			
@@ -113,10 +113,10 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 	}
 	
 	@Override
-	public void removeSubmodelById(String submodelId) {
+	public void deleteSubmodelById(String submodelId) {
 		Preconditions.checkNotNull(submodelId);
 		
-		String url = String.format("%s/%s", m_url, encodeBase64(submodelId));
+		String url = String.format("%s/%s", m_url, AASUtils.encodeBase64UrlSafe(submodelId));
 		
 		Request req = new Request.Builder().url(url).delete().build();
 		send(req);
@@ -125,7 +125,7 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 	private HttpSubmodelServiceClient toService(Submodel submodel) {
 		Preconditions.checkNotNull(submodel);
 		
-		String urlPrefix = String.format("%s/%s", m_url, Utils.encodeBase64(submodel.getId()));
+		String urlPrefix = String.format("%s/%s", m_url, AASUtils.encodeBase64UrlSafe(submodel.getId()));
 		return new HttpSubmodelServiceClient(getHttpClient(), urlPrefix);
 	}
 }

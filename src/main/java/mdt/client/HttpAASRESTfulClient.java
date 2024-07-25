@@ -2,7 +2,6 @@ package mdt.client;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.util.Base64;
 import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.DeserializationException;
@@ -10,9 +9,9 @@ import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonDeserializer;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
 
+import utils.InternalException;
 import utils.func.Lazy;
 
-import mdt.model.InternalException;
 import mdt.model.MDTExceptionEntity;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -38,10 +37,6 @@ public class HttpAASRESTfulClient {
 	
 	public OkHttpClient getHttpClient() {
 		return m_client;
-	}
-	
-	public String encodeBase64(String input) {
-		return Base64.getEncoder().encodeToString(input.getBytes());
 	}
 	
 	public <T> T parseJson(String jsonStr, Class<T> valueCls) throws DeserializationException {

@@ -1,17 +1,15 @@
 package mdt.cli;
 
-import java.time.Duration;
-import java.util.function.Function;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import utils.StateChangePoller;
 import utils.UnitUtils;
+import utils.func.CheckedSupplier;
 
 import mdt.client.MDTClientConfig;
-import mdt.client.instance.StatusChangeMonitor;
-import mdt.model.instance.MDTInstance;
-import mdt.model.instance.MDTInstanceManager;
+import mdt.client.instance.HttpMDTInstanceClient;
+import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.instance.MDTInstanceStatus;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -27,14 +25,14 @@ import picocli.CommandLine.Parameters;
 public class StartMDTInstanceCommand extends MDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(StartMDTInstanceCommand.class);
 	
-	@Parameters(index="0", paramLabel="ids", description="MDTInstance id list to start")
+	@Parameters(index="0", paramLabel="id", description="MDTInstance id to start")
 	private String m_instanceId;
 
-	@Option(names={"--sampling", "-s"}, paramLabel="duration",
-			description="Status sampling interval (e.g. \"1s\", \"500ms\"")
-	private String m_sampleInterval = "3s";
+	@Option(names={"--poll"}, paramLabel="duration",
+			description="Status polling interval (e.g. \"1s\", \"500ms\"")
+	private String m_pollingInterval = "1s";
 
-	@Option(names={"--timeout", "-t"}, paramLabel="duration",
+	@Option(names={"--timeout"}, paramLabel="duration",
 			description="Status sampling timeout (e.g. \"30s\", \"1m\"")
 	private String m_timeout = "1m";
 
@@ -74,9 +72,9 @@ public class StartMDTInstanceCommand extends MDTCommand {
 	
 	@Override
 	public void run(MDTClientConfig configs) throws Exception {
-		MDTInstanceManager mgr = this.createMDTInstanceManager(configs);
+		HttpMDTInstanceManagerClient mgr = this.createMDTInstanceManager(configs);
 		
-		MDTInstance instance = mgr.getInstance(m_instanceId);
+		HttpMDTInstanceClient instance = mgr.getInstance(m_instanceId);
 		if ( m_verbose  ) {
 			System.out.printf("starting instance: %s ", instance.getId());
 		}
@@ -84,11 +82,14 @@ public class StartMDTInstanceCommand extends MDTCommand {
 			System.out.printf("starting instance: %s%n", instance.getId());
 		}
 		
-		instance.start();
+		instance.startAsync();
 		if ( !m_nowait ) {
-			Function<MDTInstanceStatus,Boolean> pred = new Function<>() {
+			// wait하는 경우에는 MDTInstance의 상태를 계속적으로 polling하여
+			// 'STARTING' 상태에서 벗어날 때까지 대기한다.
+			CheckedSupplier<Boolean> whilePredicate = new CheckedSupplier<>() {
 				@Override
-				public Boolean apply(MDTInstanceStatus status) {
+				public Boolean get() {
+					MDTInstanceStatus status = instance.reload().getStatus();
 					if ( m_vverbose ) {
 						System.out.printf("checking status: instance=%s status=%s%n",
 											instance.getId(), status);
@@ -96,21 +97,20 @@ public class StartMDTInstanceCommand extends MDTCommand {
 					else if ( m_verbose ) {
 						System.out.print(".");
 					}
-					return status != MDTInstanceStatus.STARTING;
+					return status == MDTInstanceStatus.STARTING;
 				}
 			};
-
-			Duration sampleInterval = UnitUtils.parseDuration(m_sampleInterval);
-			Duration timeout = UnitUtils.parseDuration(m_timeout);
-			StatusChangeMonitor monitor = new StatusChangeMonitor(instance, pred);
-			monitor.setPollingInterval(sampleInterval);
-			monitor.setTimeout(timeout);
-			monitor.run();
+			
+			StateChangePoller.pollWhile(whilePredicate)
+							.interval(UnitUtils.parseDuration(m_pollingInterval))
+							.timeout(UnitUtils.parseDuration(m_timeout))
+							.build()
+							.run();
 		}
 		
 		if ( m_verbose || m_vverbose ) {
 			MDTInstanceStatus status = instance.getStatus();
-			String svcEp = instance.getServiceEndpoint();
+			String svcEp = instance.getEndpoint();
 			
 			if ( m_verbose ) {
 				System.out.println();

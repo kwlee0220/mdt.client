@@ -3,8 +3,6 @@ package mdt.client;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +12,6 @@ import org.yaml.snakeyaml.constructor.Constructor;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import mdt.client.instance.HttpMDTInstanceManagerClient;
 
 
 /**
@@ -27,11 +24,6 @@ public final class MDTClientConfig {
 	private static final Logger s_logger = LoggerFactory.getLogger(MDTClientConfig.class);
 
 	private String endpoint;
-	
-	public HttpMDTInstanceManagerClient createMDTInstanceManager()
-		throws KeyManagementException, NoSuchAlgorithmException {
-		return HttpMDTInstanceManagerClient.create(endpoint);
-	}
 	
 	public static MDTClientConfig load(Path configFile) throws IOException {
 		if ( s_logger.isInfoEnabled() ) {

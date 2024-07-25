@@ -3,7 +3,7 @@ package mdt.client;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
-import mdt.client.registry.HttpAASRegistryClient;
+import mdt.client.registry.HttpShellRegistryClient;
 import mdt.client.registry.HttpSubmodelRegistryClient;
 import mdt.client.repository.HttpAASRepositoryClient;
 import mdt.client.repository.HttpSubmodelRepositoryClient;
@@ -28,8 +28,8 @@ public class HttpServiceFactory implements ServiceFactory {
 	}
 	
 	@Override
-	public HttpAASRegistryClient getAssetAdministrationShellRegistry(String endpoint) {
-		return new HttpAASRegistryClient(m_httpClient, endpoint);
+	public HttpShellRegistryClient getAssetAdministrationShellRegistry(String endpoint) {
+		return new HttpShellRegistryClient(m_httpClient, endpoint);
 	}
 
 	@Override

@@ -2,7 +2,6 @@ package mdt.client.registry;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.util.Base64;
 import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.DeserializationException;
@@ -38,10 +37,6 @@ class HttpRegistryClient {
 	
 	public OkHttpClient getHttpClient() {
 		return m_client;
-	}
-	
-	protected String encodeBase64(String input) {
-		return Base64.getEncoder().encodeToString(input.getBytes());
 	}
 	
 	protected RequestBody createRequestBody(Object desc) throws SerializationException {
