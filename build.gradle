@@ -2,15 +2,17 @@ plugins {
 	id 'java'
 	id 'application'
 	id 'eclipse'
-	id 'com.github.johnrengelman.shadow' version '7.1.2'
+	id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 group = 'etri'
 version = '0.9.0'
 mainClassName = 'mdt.cli.MDTCommandsMain'
 
-sourceCompatibility = '17'
-targetCompatibility = '17'
+java {
+	sourceCompatibility = JavaVersion.VERSION_17
+	targetCompatibility = JavaVersion.VERSION_17
+}
 [compileJava,compileTestJava]*.options*.encoding = 'UTF-8'
 
 repositories {
@@ -30,7 +32,7 @@ ext {
 	paho_version = '1.2.5'
 	commons_beanutils_version = '1.9.4'
 	
-	aas4j_version = '1.0.0'
+	aas4j_version = '1.0.2'
 }
 
 dependencies {
@@ -61,19 +63,14 @@ dependencies {
 }
 
 task sourceJar(type: Jar) {
-	classifier 'sources'
 	from sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar) {
-	classifier 'javadoc'
 	from javadoc.destinationDir
 }
 
 shadowJar {
-	classifier 'all'
-	
-//	zip64 true
 	mergeServiceFiles()
 	
 	exclude 'META-INF/*.SF'
