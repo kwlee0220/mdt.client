@@ -126,6 +126,7 @@ public class InstanceDescriptorSerDe {
 											DefaultInstanceSubmodelDescriptor smDesc = new DefaultInstanceSubmodelDescriptor();
 											smDesc.setId(getStringField(n, "id"));
 											smDesc.setIdShort(getStringField(n, "idShort"));
+											smDesc.setSemanticId(getStringField(n, "semanticId"));
 											return (InstanceSubmodelDescriptor)smDesc;
 										})
 										.toList());
@@ -161,7 +162,7 @@ public class InstanceDescriptorSerDe {
 			gen.writeStringField("assetKind", desc.getAssetKind().name());
 			
 			gen.writeArrayFieldStart("submodels");
-			for ( InstanceSubmodelDescriptor smDesc: desc.getSubmodels() ) {
+			for ( InstanceSubmodelDescriptor smDesc: desc.getInstanceSubmodelDescriptors() ) {
 				serialize(smDesc, gen);
 			}
 			gen.writeEndArray();
@@ -173,6 +174,7 @@ public class InstanceDescriptorSerDe {
 			gen.writeStartObject();
 			gen.writeStringField("id", desc.getId());
 			gen.writeStringField("idShort", desc.getIdShort());
+			gen.writeStringField("semanticId", desc.getSemanticId());
 			gen.writeEndObject();
 		}
 	}

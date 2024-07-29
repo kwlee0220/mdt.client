@@ -15,7 +15,7 @@ public class TestSubmodelRegistry {
 		JsonSerializer ser = new JsonSerializer();
 		
 		HttpMDTInstanceManagerClient mdtClient
-							= HttpMDTInstanceManagerClient.create("http://localhost:12985/instance-manager");
+							= HttpMDTInstanceManagerClient.connect("http://localhost:12985/instance-manager");
 		
 		SubmodelRegistry registry = mdtClient.getSubmodelRegistry();
 		for ( SubmodelDescriptor desc: registry.getAllSubmodelDescriptors() ) {

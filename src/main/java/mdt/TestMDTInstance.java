@@ -21,7 +21,7 @@ import mdt.model.registry.ResourceNotFoundException;
  */
 public class TestMDTInstance {
 	public static final void main(String... args) throws Exception {
-		HttpMDTInstanceManagerClient client = HttpMDTInstanceManagerClient.create("http://localhost:12985/instance-manager");
+		HttpMDTInstanceManagerClient client = HttpMDTInstanceManagerClient.connect("http://localhost:12985/instance-manager");
 		
 		File dir = new File("D:\\Dropbox\\Temp\\fa3st-repository\\ispark\\models");
 		HttpMDTInstanceClient inst1 = client.addInstance("KR3", null, null, new File(dir, "aas_KR3.json"),

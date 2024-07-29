@@ -7,4 +7,5 @@ package mdt.model.instance;
 public interface InstanceSubmodelDescriptor {
 	public String getId();
 	public String getIdShort();
+	public String getSemanticId();
 }

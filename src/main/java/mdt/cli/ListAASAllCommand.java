@@ -9,9 +9,9 @@ import utils.func.FOption;
 import utils.stream.FStream;
 
 import mdt.client.MDTClientConfig;
-import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.instance.InstanceSubmodelDescriptor;
+import mdt.model.instance.MDTInstance;
 import mdt.model.registry.InvalidResourceStatusException;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -79,7 +79,7 @@ public class ListAASAllCommand extends MDTCommand {
 	}
 	
 	private void displayShortNoTable(HttpMDTInstanceManagerClient instanceMgr) {
-		for ( HttpMDTInstanceClient inst : instanceMgr.getAllInstances() ) {
+		for ( MDTInstance inst : instanceMgr.getAllInstances() ) {
 			try {
 				AssetAdministrationShell aas = inst.getAssetAdministrationShellService()
 													.getAssetAdministrationShell();
@@ -98,7 +98,7 @@ public class ListAASAllCommand extends MDTCommand {
 		table.addCell(" INSTANCE ");
 		table.addCell(" SUBMODELS ");
 
-		for ( HttpMDTInstanceClient inst : instanceMgr.getAllInstances() ) {
+		for ( MDTInstance inst : instanceMgr.getAllInstances() ) {
 			try {
 				AssetAdministrationShell aas = inst.getAssetAdministrationShellService()
 													.getAssetAdministrationShell();
@@ -110,7 +110,7 @@ public class ListAASAllCommand extends MDTCommand {
 	}
 	
 	private void displayLongNoTable(HttpMDTInstanceManagerClient instanceMgr) {
-		for ( HttpMDTInstanceClient inst : instanceMgr.getAllInstances() ) {
+		for ( MDTInstance inst : instanceMgr.getAllInstances() ) {
 			try {
 				AssetAdministrationShell aas = inst.getAssetAdministrationShellService()
 													.getAssetAdministrationShell();
@@ -133,7 +133,7 @@ public class ListAASAllCommand extends MDTCommand {
 		table.addCell(" DISPLAY_NAMES ");
 		table.addCell(" SUBMODELS ");
 		
-		for ( HttpMDTInstanceClient inst : instanceMgr.getAllInstances() ) {
+		for ( MDTInstance inst : instanceMgr.getAllInstances() ) {
 			try {
 				AssetAdministrationShell aas = inst.getAssetAdministrationShellService()
 													.getAssetAdministrationShell();
@@ -144,8 +144,8 @@ public class ListAASAllCommand extends MDTCommand {
 		System.out.println(table.render());
 	}
 	
-	private String[] toShortColumns(AssetAdministrationShell aas, HttpMDTInstanceClient inst) {
-		String smIdCsv = FStream.from(inst.getInstanceSubmodelDescriptors())
+	private String[] toShortColumns(AssetAdministrationShell aas, MDTInstance inst) {
+		String smIdCsv = FStream.from(inst.getInstanceDescriptor().getInstanceSubmodelDescriptors())
 								.map(InstanceSubmodelDescriptor::getIdShort)
 								.join(", ");
 		
@@ -157,12 +157,12 @@ public class ListAASAllCommand extends MDTCommand {
 		};
 	}
 	
-	private String[] toLongColumns(AssetAdministrationShell aas, HttpMDTInstanceClient inst) {
+	private String[] toLongColumns(AssetAdministrationShell aas, MDTInstance inst) {
 		String displayNames = FOption.ofNullable(aas.getDisplayName())
 									.flatMapFStream(names -> FStream.from(names))
 									.join(", ");
 		
-		String smIdCsv = FStream.from(inst.getInstanceSubmodelDescriptors())
+		String smIdCsv = FStream.from(inst.getInstanceDescriptor().getInstanceSubmodelDescriptors())
 								.map(InstanceSubmodelDescriptor::getIdShort)
 								.join(", ");
 		return new String[] {

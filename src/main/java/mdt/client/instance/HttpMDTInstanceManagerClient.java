@@ -43,7 +43,7 @@ import okhttp3.RequestBody;
  * @author Kang-Woo Lee (ETRI)
  */
 public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient
-											implements MDTInstanceManagerClient<HttpMDTInstanceClient> {
+											implements MDTInstanceManagerClient {
 	public static final String PATH_INSTANCE_MANAGER = "/instance-manager";
 	public static final String PATH_AAS_REPOSITORY = "/shell-registry";
 	public static final String PATH_SUBMODEL_REPOSITORY = "/submodel-registry";
@@ -53,11 +53,11 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient
 	private final String m_endpoint;
 	private final InstanceDescriptorSerDe m_serde = new InstanceDescriptorSerDe();
 	
-	public static HttpMDTInstanceManagerClient create(MDTClientConfig config) {
-		return create(config.getEndpoint());
+	public static HttpMDTInstanceManagerClient connect(MDTClientConfig config) {
+		return connect(config.getEndpoint());
 	}
 	
-	public static HttpMDTInstanceManagerClient create(String host, int port) {
+	public static HttpMDTInstanceManagerClient connect(String host, int port) {
 		try {
 			HttpServiceFactory svcFact = new HttpServiceFactory();
 			String endpoint = String.format("http://%s:%d/%s", host, port, PATH_INSTANCE_MANAGER);
@@ -68,7 +68,7 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient
 		}
 	}
 	
-	public static HttpMDTInstanceManagerClient create(String endpoint) {
+	public static HttpMDTInstanceManagerClient connect(String endpoint) {
 		try {
 			HttpServiceFactory svcFact = new HttpServiceFactory();
 			return new HttpMDTInstanceManagerClient(svcFact, endpoint);
@@ -124,19 +124,19 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient
 
     // @GetMapping({"/instances"})
 	@Override
-	public List<HttpMDTInstanceClient> getAllInstances() throws MDTInstanceManagerException {
+	public List<MDTInstance> getAllInstances() throws MDTInstanceManagerException {
 		String url = String.format("%s/instances", m_endpoint);
 		Request req = new Request.Builder().url(url).get().build();
 		
 		String descListJson = call(req, String.class);
 		return FStream.from(m_serde.readInstanceDescriptorList(descListJson))
-						.map(p -> new HttpMDTInstanceClient(this, p))
+						.map(p -> (MDTInstance)new HttpMDTInstanceClient(this, p))
 						.toList();
 	}
 
     // @GetMapping({"/instances?filter={filter}"})
 	@Override
-	public List<HttpMDTInstanceClient> getAllInstancesByFilter(String filter) {
+	public List<MDTInstance> getAllInstancesByFilter(String filter) {
 		String url = String.format("%s/instances", m_endpoint);
 		HttpUrl httpUrl = HttpUrl.parse(url).newBuilder()
 						 		.addQueryParameter("filter", filter)
@@ -144,26 +144,36 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient
 		Request req = new Request.Builder().url(httpUrl).get().build();
 		String descListJson = call(req, String.class);
 		return FStream.from(m_serde.readInstanceDescriptorList(descListJson))
-						.map(p -> new HttpMDTInstanceClient(this, p))
+						.map(p -> (MDTInstance)new HttpMDTInstanceClient(this, p))
 						.toList();
 	}
 	
 	@Override
 	public HttpMDTInstanceClient getInstanceByAasId(String aasId) throws ResourceNotFoundException {
 		String filter = String.format("instance.aasId = '%s'", aasId);
-		List<HttpMDTInstanceClient> instList = getAllInstancesByFilter(filter);
+		List<MDTInstance> instList = getAllInstancesByFilter(filter);
 		if ( instList.size() == 0 ) {
 			throw new ResourceNotFoundException("MDTInstance", "aasId=" + aasId);
 		}
 		else {
-			return instList.get(0);
+			return (HttpMDTInstanceClient)instList.get(0);
 		}
 	}
 	
 	@Override
-	public List<HttpMDTInstanceClient> getAllInstancesByAasIdShort(String aasIdShort) {
+	public List<MDTInstance> getAllInstancesByAasIdShort(String aasIdShort) {
 		String filter = String.format("instance.aasIdShort = '%s'", aasIdShort);
 		return getAllInstancesByFilter(filter);
+	}
+
+    // @GetMapping({"/instances?aggregate=count"})
+	@Override
+	public long countInstances() {
+		String url = String.format("%s/instances", m_endpoint);
+		Request req = new Request.Builder().url(url).get().build();
+		
+		String countStr = call(req, String.class);
+		return Long.parseLong(countStr);
 	}
 
     // @PostMapping({"/instances"})
@@ -238,7 +248,7 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient
 
     // @DeleteMapping("/instances")
 	@Override
-	public void removeInstanceAll() throws MDTInstanceManagerException {
+	public void removeAllInstances() throws MDTInstanceManagerException {
 		String url = String.format("%s/instances", m_endpoint);
 		Request req = new Request.Builder().url(url).delete().build();
 		send(req);
@@ -258,7 +268,7 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient
 									.join('.');
 		
 		String submodelId = submodelKey.getValue();
-		HttpMDTInstanceClient inst = getAllInstancesBySubmodelId(submodelId);
+		MDTInstance inst = getInstanceBySubmodelId(submodelId);
 		SubmodelService svc = inst.getSubmodelServiceById(submodelId);
 		return svc.getSubmodelElementByPath(idShortPath);
 	}

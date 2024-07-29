@@ -112,7 +112,7 @@ public class StartSimulationCommand extends MDTCommand {
 			// Simulation Submodel의 갯수가 1개 인 경우에는 이것을 사용한다.
 			inst = mdtClient.getInstance(m_targetId);
 			List<SubmodelDescriptor> simulations 
-					= Funcs.filter(inst.getSubmodelDescriptors(),
+					= Funcs.filter(inst.getAllSubmodelDescriptors(),
 									desc -> Simulation.SEMANTIC_ID.equals(desc.getSemanticId()));
 			if ( simulations.size() == 0 ) {
 				System.err.printf("Invalid Simulation Submodel id: %s%n", m_targetId);

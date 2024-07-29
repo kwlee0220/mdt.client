@@ -21,6 +21,7 @@ import mdt.client.MDTClientConfig;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.ModelConverter;
+import mdt.model.instance.MDTInstance;
 import mdt.model.registry.ResourceNotFoundException;
 import mdt.model.service.AssetAdministrationShellService;
 import mdt.model.service.SubmodelService;
@@ -59,9 +60,9 @@ public class GetAASCommand extends MDTCommand {
 			instance = mgr.getInstanceByAasId(m_aasId);
 		}
 		catch ( ResourceNotFoundException expected ) {
-			List<HttpMDTInstanceClient> instList = mgr.getAllInstancesByAasIdShort(m_aasId);
+			List<MDTInstance> instList = mgr.getAllInstancesByAasIdShort(m_aasId);
 			if ( instList.size() == 1 ) {
-				instance = instList.get(0);
+				instance = (HttpMDTInstanceClient)instList.get(0);
 			}
 			else  {
 				throw new ResourceNotFoundException("AssetAdministrationShell", "aasId=" + m_aasId);
@@ -116,7 +117,7 @@ public class GetAASCommand extends MDTCommand {
 	
 	private void displayEnvironment(HttpMDTInstanceClient instance, AssetAdministrationShell aas)
 		throws SerializationException {	
-		List<Submodel> submodels = FStream.from(instance.getSubmodelServices())
+		List<Submodel> submodels = FStream.from(instance.getAllSubmodelServices())
 											.map(SubmodelService::getSubmodel)
 											.toList();
 		Environment env = new DefaultEnvironment.Builder()

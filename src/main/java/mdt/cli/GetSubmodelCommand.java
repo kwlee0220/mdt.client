@@ -57,7 +57,7 @@ public class GetSubmodelCommand extends MDTCommand {
 		
 		SubmodelService submodelSvc = null;
 		try {
-			HttpMDTInstanceClient inst = client.getAllInstancesBySubmodelId(m_submodelId);
+			HttpMDTInstanceClient inst = (HttpMDTInstanceClient)client.getInstanceBySubmodelId(m_submodelId);
 			submodelSvc = inst.getSubmodelServiceById(m_submodelId);
 		}
 		catch ( ResourceNotFoundException expected ) {

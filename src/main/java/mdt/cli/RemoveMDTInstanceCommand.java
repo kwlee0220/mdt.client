@@ -38,7 +38,7 @@ public class RemoveMDTInstanceCommand extends MDTCommand {
 		HttpMDTInstanceManagerClient mgr = this.createMDTInstanceManager(configs);
 		
 		if ( m_removeAll ) {
-			mgr.removeInstanceAll();
+			mgr.removeAllInstances();
 		}
 		else {
 			for ( String instId: m_instanceIds ) {

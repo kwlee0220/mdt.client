@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
 
@@ -13,8 +14,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.AssetKind;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
 
 import utils.StateChangePoller;
-import utils.Throwables;
-import utils.func.Funcs;
 import utils.stream.FStream;
 
 import mdt.client.HttpAASRESTfulClient;
@@ -93,56 +92,77 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 	public AssetKind getAssetKind() {
 		return m_desc.get().getAssetKind();
 	}
-	
 
+	@Override
+	public InstanceDescriptor getInstanceDescriptor() {
+		return m_desc.get();
+	}
 
-    // @GetMapping({"instances/{id}"})
 	public HttpMDTInstanceClient reload() {
 		InstanceDescriptor desc = m_manager.getInstanceDescriptor(getId());
 		m_desc.set(desc);
 		
 		return this;
 	}
-	
 
-    // @PutMapping({"instances/{id}/start"})
 	@Override
-	public void startAsync() throws MDTInstanceManagerException {
-		String url = String.format("%s/start", m_endpoint);
-		Request req = new Request.Builder().url(url).put(EMPTY_BODY).build();
+	public void start(@Nullable Duration pollInterval, @Nullable Duration timeout)
+		throws MDTInstanceManagerException, TimeoutException, InterruptedException, InvalidResourceStatusException {
+		MDTInstanceStatus status = m_desc.get().getStatus(); 
+		if ( status != MDTInstanceStatus.STOPPED && status != MDTInstanceStatus.FAILED ) {
+			throw new InvalidResourceStatusException("MDTInstance", getId(), status);
+		}
 		
-		String descJson = call(req, String.class);
-		InstanceDescriptor desc = m_serde.readInstanceDescriptor(descJson);
+		InstanceDescriptor desc = sendStartRequest();
 		m_desc.set(desc);
-	}
-
-	@Override
-	public void start(Duration pollInterval, @Nullable Duration timeout)
-		throws MDTInstanceManagerException, TimeoutException, InterruptedException {
-		startAsync();
-		waitWhileStatus(MDTInstanceStatus.STARTING, pollInterval, timeout);
-	}
-
-    // @PutMapping({"instances/{id}/stop"})
-	@Override
-	public void stopAsync() throws MDTInstanceManagerException {
-		String url = String.format("%s/stop", m_endpoint);
-		Request req = new Request.Builder().url(url).put(EMPTY_BODY).build();
 		
-		String descJson = call(req, String.class);
-		InstanceDescriptor desc = m_serde.readInstanceDescriptor(descJson);
-		m_desc.set(desc);
+		switch ( desc.getStatus() ) {
+			case RUNNING:
+				return;
+			case STARTING:
+				if ( pollInterval != null ) {
+					try {
+						waitWhileStatus(state -> state == MDTInstanceStatus.STARTING, pollInterval, timeout);
+					}
+					catch ( ExecutionException e ) {
+						throw new MDTInstanceManagerException(e.getCause());
+					}
+				}
+				break;
+			default:
+				throw new InvalidResourceStatusException("MDTInstance", getId(), getStatus());
+		}
 	}
 
 	@Override
-	public void stop(Duration pollInterval, @Nullable Duration timeout)
-		throws MDTInstanceManagerException, TimeoutException, InterruptedException {
-		stopAsync();
-		waitWhileStatus(MDTInstanceStatus.STOPPING, pollInterval, timeout);
+	public void stop(@Nullable Duration pollInterval, @Nullable Duration timeout)
+		throws MDTInstanceManagerException, TimeoutException, InterruptedException, InvalidResourceStatusException {
+		MDTInstanceStatus status = m_desc.get().getStatus(); 
+		if ( status != MDTInstanceStatus.RUNNING) {
+			throw new InvalidResourceStatusException("MDTInstance", getId(), status);
+		}
+		
+		InstanceDescriptor desc = sendStopRequest();
+		m_desc.set(desc);
+		
+		switch ( desc.getStatus() ) {
+			case STOPPED:
+				return;
+			case STOPPING:
+				if ( pollInterval != null ) {
+					try {
+						waitWhileStatus(state -> state == MDTInstanceStatus.STOPPING, pollInterval, timeout);
+					}
+					catch ( ExecutionException e ) {
+						throw new MDTInstanceManagerException(e.getCause());
+					}
+				}
+				break;
+			default:
+				throw new InvalidResourceStatusException("MDTInstance", getId(), getStatus());
+		}
 	}
 
-	
-	
 	@Override
 	public HttpAASServiceClient getAssetAdministrationShellService() {
 		String endpoint = ModelConverter.toAASServiceEndpointString(getEndpoint(), getAasId());
@@ -155,7 +175,7 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 	}
 
 	@Override
-	public List<? extends SubmodelService> getSubmodelServices() throws InvalidResourceStatusException {
+	public List<SubmodelService> getAllSubmodelServices() throws InvalidResourceStatusException {
 		return FStream.from(getInstanceSubmodelDescriptors())
 						.map(desc -> toSubmodelService(desc.getId()))
 						.toList();
@@ -171,7 +191,7 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 
 	
 	public List<InstanceSubmodelDescriptor> getInstanceSubmodelDescriptors() {
-		return FStream.from(m_desc.get().getSubmodels())
+		return FStream.from(m_desc.get().getInstanceSubmodelDescriptors())
 						.cast(InstanceSubmodelDescriptor.class)
 						.toList();
 	}
@@ -188,25 +208,54 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 
     // @GetMapping({"instances/{id}/submodel_descriptors"})
 	@Override
-	public List<SubmodelDescriptor> getSubmodelDescriptors() {
+	public List<SubmodelDescriptor> getAllSubmodelDescriptors() {
 		String url = String.format("%s/submodel_descriptors", m_endpoint);
 		
 		Request req = new Request.Builder().url(url).get().build();
 		return callList(req, SubmodelDescriptor.class);
 	}
 	
+	public void waitWhileStatus(Predicate<MDTInstanceStatus> waitCond, Duration pollInterval, Duration timeout)
+		throws TimeoutException, InterruptedException, ExecutionException {
+		StateChangePoller.pollWhile(() -> waitCond.test(reload().getStatus()))
+						.interval(pollInterval)
+						.timeout(timeout)
+						.build()
+						.run();
+	}
 	
-	public List<String> getSubmodelIdShorts() {
-		return Funcs.map(getInstanceSubmodelDescriptors(), InstanceSubmodelDescriptor::getIdShort);
+	@Override
+	public String toString() {
+		String submodelIdStr = FStream.from(getSubmodelIdShorts()).join(", ");
+		return String.format("[%s] AAS=%s SubmodelIdShorts=(%s) status=%s",
+								getId(), getAasId(), submodelIdStr, getStatus());
+	}
+	
+    // @PutMapping({"instance-manager/instances/{id}/start"})
+	private InstanceDescriptor sendStartRequest() {
+		String url = String.format("%s/start", m_endpoint);
+		Request req = new Request.Builder().url(url).put(EMPTY_BODY).build();
+		
+		String descJson = call(req, String.class);
+		return m_serde.readInstanceDescriptor(descJson);
+	}
+
+    // @PutMapping({"instance-manager/instances/{id}/stop"})
+	private InstanceDescriptor sendStopRequest() {
+		String url = String.format("%s/stop", m_endpoint);
+		Request req = new Request.Builder().url(url).put(EMPTY_BODY).build();
+		
+		String descJson = call(req, String.class);
+		return  m_serde.readInstanceDescriptor(descJson);
 	}
 	
 	private InstanceSubmodelDescriptor getInstanceSubmodelDescriptorById(String submodelId) {
-		return FStream.from(m_desc.get().getSubmodels())
+		return FStream.from(m_desc.get().getInstanceSubmodelDescriptors())
 						.findFirst(d -> d.getId().equals(submodelId))
 						.getOrThrow(() -> new ResourceNotFoundException("Submodel", "id=" + submodelId));
 	}
 	private InstanceSubmodelDescriptor getInstanceSubmodelDescriptorByIdShort(String submodelIdShort) {
-		return FStream.from(m_desc.get().getSubmodels())
+		return FStream.from(m_desc.get().getInstanceSubmodelDescriptors())
 						.findFirst(d -> submodelIdShort.equals(d.getIdShort()))
 						.getOrThrow(() -> new ResourceNotFoundException("Submodel", "idShort=" + submodelIdShort));
 	}
@@ -219,19 +268,5 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 		
 		String smEp = ModelConverter.toSubmodelServiceEndpointString(baseEndpoint, id);
 		return new HttpSubmodelServiceClient(getHttpClient(), smEp);
-	}
-	
-	private void waitWhileStatus(MDTInstanceStatus waitStatus, Duration pollInterval, Duration timeout)
-		throws TimeoutException, InterruptedException {
-		try {
-			StateChangePoller.pollWhile(() -> reload().getStatus() == waitStatus)
-							.interval(pollInterval)
-							.timeout(timeout)
-							.build()
-							.run();
-		}
-		catch ( ExecutionException e ) {
-			throw Throwables.toRuntimeException(e);
-		}
 	}
 }

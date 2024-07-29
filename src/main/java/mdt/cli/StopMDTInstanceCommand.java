@@ -3,18 +3,18 @@ package mdt.cli;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Predicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import utils.StateChangePoller;
 import utils.UnitUtils;
-import utils.func.CheckedSupplier;
 import utils.stream.FStream;
 
 import mdt.client.MDTClientConfig;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceStatus;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -51,16 +51,17 @@ public class StopMDTInstanceCommand extends MDTCommand {
 	public void run(MDTClientConfig configs) throws Exception {
 		HttpMDTInstanceManagerClient mgr = this.createMDTInstanceManager(configs);
 
-		List<HttpMDTInstanceClient> targetInstList;
+		List<MDTInstance> targetInstList;
 		if ( m_stopAll ) {
 			targetInstList = mgr.getAllInstancesByFilter("instance.status = 'RUNNING'");
 		}
 		else {
 			targetInstList = FStream.from(m_instanceIds)
 									.map(mgr::getInstance)
+									.cast(MDTInstance.class)
 									.toList();
 		}
-		for ( HttpMDTInstanceClient instance: targetInstList ) {
+		for ( MDTInstance instance: targetInstList ) {
 			try {
 				System.out.println("stopping instance: " + instance.getId());
 				stopInstance(instance);
@@ -71,27 +72,22 @@ public class StopMDTInstanceCommand extends MDTCommand {
 		}
 	}
 	
-	private void stopInstance(HttpMDTInstanceClient instance) throws TimeoutException, InterruptedException,
+	private void stopInstance(MDTInstance instance) throws TimeoutException, InterruptedException,
 																		ExecutionException {
-		instance.stopAsync();
+		instance.stop(null, null);
 		if ( !m_nowait ) {
 			// wait하는 경우에는 MDTInstance의 상태를 계속적으로 polling하여
 			// 'STOPPING' 상태에서 벗어날 때까지 대기한다.
-			CheckedSupplier<Boolean> whilePredicate = new CheckedSupplier<>() {
-				@Override
-				public Boolean get() {
-					MDTInstanceStatus status = instance.reload().getStatus();
-					if ( m_verbose ) {
-						System.out.print(".");
-					}
-					return status == MDTInstanceStatus.STOPPING;
+			Predicate<MDTInstanceStatus> whileStarting = status -> {
+				if ( m_verbose ) {
+					System.out.print(".");
 				}
+				return status == MDTInstanceStatus.STOPPING;
 			};
 			
-			StateChangePoller.pollWhile(whilePredicate)
-							.interval(UnitUtils.parseDuration("1s"))
-							.build()
-							.run();
+			HttpMDTInstanceClient instClient = (HttpMDTInstanceClient)instance;
+			instClient.waitWhileStatus(whileStarting, UnitUtils.parseDuration("1s"),
+										UnitUtils.parseDuration("1m"));
 			if ( m_verbose ) {
 				System.out.println();
 			}

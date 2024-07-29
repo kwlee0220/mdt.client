@@ -64,7 +64,7 @@ public class GetPropertyCommand extends MDTCommand {
 			StopWatch watch = StopWatch.start();
 			
 			try {
-				HttpMDTInstanceClient inst = mgr.getAllInstancesBySubmodelId(m_submodelId);
+				HttpMDTInstanceClient inst = (HttpMDTInstanceClient)mgr.getInstanceBySubmodelId(m_submodelId);
 				SubmodelService svc = inst.getSubmodelServiceById(m_submodelId);
 				List<SubmodelElement> smeList = FStream.from(m_idPathList)
 														.mapOrIgnore(svc::getSubmodelElementByPath)

@@ -71,7 +71,7 @@ mdt get ksx9101 KR3
 #####################################################################################
 ##### MDT Server 시작
 cd /mnt/d/Dropbox/Temp/fa3st-repository
-java -jar /mnt/c/development/mdt/mdt.instance/build/libs/mdt.server-0.0.1-all.jar
+java -jar /mnt/c/development/mdt/mdt.instance/build/libs/mdt.server-all.jar
 
 
 #####################################################################################

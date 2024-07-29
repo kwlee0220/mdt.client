@@ -7,7 +7,7 @@ import mdt.model.registry.SubmodelRegistry;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public interface MDTInstanceManagerClient<T extends MDTInstance> extends MDTInstanceManager<T> {
+public interface MDTInstanceManagerClient extends MDTInstanceManager {
 	public AASRegistry getAssetAdministrationShellRegistry();
 	public SubmodelRegistry getSubmodelRegistry();
 }

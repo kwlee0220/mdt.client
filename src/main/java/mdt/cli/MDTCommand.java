@@ -65,7 +65,7 @@ public abstract class MDTCommand extends HomeDirPicocliCommand {
 	
 	protected HttpMDTInstanceManagerClient createMDTInstanceManager(MDTClientConfig config) {
 		try {
-			return HttpMDTInstanceManagerClient.create(config);
+			return HttpMDTInstanceManagerClient.connect(config);
 		}
 		catch ( Exception e ) {
 			throw new MDTInstanceManagerException("" + e);

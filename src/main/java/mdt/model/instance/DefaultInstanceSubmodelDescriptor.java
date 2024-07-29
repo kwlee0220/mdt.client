@@ -15,4 +15,5 @@ import lombok.Setter;
 public class DefaultInstanceSubmodelDescriptor implements InstanceSubmodelDescriptor {
 	private String id;
 	private String idShort;
+	private String semanticId;
 }

@@ -75,7 +75,7 @@ public class GetKSX9101Command extends MDTCommand {
 					throw new IllegalArgumentException("Not KSX9101 MDTInstance: id=" + m_mdtId);
 				}
 				
-				Map<String,Submodel> submodels = FStream.from(inst.getSubmodelServices())
+				Map<String,Submodel> submodels = FStream.from(inst.getAllSubmodelServices())
 														.map(SubmodelService::getSubmodel)
 														.toMap(Submodel::getIdShort);
 				

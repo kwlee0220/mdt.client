@@ -36,7 +36,7 @@ public class DefaultInstanceDescriptor implements InstanceDescriptor {
 	private List<DefaultInstanceSubmodelDescriptor> submodels = Lists.newArrayList();
 	
 	@Override
-	public List<InstanceSubmodelDescriptor> getSubmodels() {
+	public List<InstanceSubmodelDescriptor> getInstanceSubmodelDescriptors() {
 		return FStream.from(this.submodels)
 						.cast(InstanceSubmodelDescriptor.class)
 						.toList();

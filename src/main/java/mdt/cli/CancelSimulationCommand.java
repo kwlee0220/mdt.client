@@ -62,7 +62,7 @@ public class CancelSimulationCommand extends MDTCommand {
 		
 		SubmodelService svc;
 		try {
-			HttpMDTInstanceClient inst = mdtClient.getAllInstancesBySubmodelId(m_targetId);
+			HttpMDTInstanceClient inst = (HttpMDTInstanceClient)mdtClient.getInstanceBySubmodelId(m_targetId);
 			svc = inst.getSubmodelServiceById(m_targetId);
 		}
 		catch ( ResourceNotFoundException expected ) {

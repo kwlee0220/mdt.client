@@ -1,11 +1,11 @@
 package mdt.cli;
 
+import java.util.function.Predicate;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import utils.StateChangePoller;
 import utils.UnitUtils;
-import utils.func.CheckedSupplier;
 
 import mdt.client.MDTClientConfig;
 import mdt.client.instance.HttpMDTInstanceClient;
@@ -82,30 +82,22 @@ public class StartMDTInstanceCommand extends MDTCommand {
 			System.out.printf("starting instance: %s%n", instance.getId());
 		}
 		
-		instance.startAsync();
+		instance.start(null, null);
 		if ( !m_nowait ) {
 			// wait하는 경우에는 MDTInstance의 상태를 계속적으로 polling하여
 			// 'STARTING' 상태에서 벗어날 때까지 대기한다.
-			CheckedSupplier<Boolean> whilePredicate = new CheckedSupplier<>() {
-				@Override
-				public Boolean get() {
-					MDTInstanceStatus status = instance.reload().getStatus();
-					if ( m_vverbose ) {
-						System.out.printf("checking status: instance=%s status=%s%n",
-											instance.getId(), status);
-					}
-					else if ( m_verbose ) {
-						System.out.print(".");
-					}
-					return status == MDTInstanceStatus.STARTING;
+			Predicate<MDTInstanceStatus> whileStarting = status -> {
+				if ( m_vverbose ) {
+					System.out.printf("checking status: instance=%s status=%s%n",
+										instance.getId(), status);
 				}
+				else if ( m_verbose ) {
+					System.out.print(".");
+				}
+				return status == MDTInstanceStatus.STARTING;
 			};
-			
-			StateChangePoller.pollWhile(whilePredicate)
-							.interval(UnitUtils.parseDuration(m_pollingInterval))
-							.timeout(UnitUtils.parseDuration(m_timeout))
-							.build()
-							.run();
+			instance.waitWhileStatus(whileStarting, UnitUtils.parseDuration(m_pollingInterval),
+										UnitUtils.parseDuration(m_timeout));
 		}
 		
 		if ( m_verbose || m_vverbose ) {

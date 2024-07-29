@@ -15,7 +15,7 @@ public class TestAASRegistry {
 		JsonSerializer ser = new JsonSerializer();
 		
 		HttpMDTInstanceManagerClient mdtClient
-							= HttpMDTInstanceManagerClient.create("http://localhost:12985/instance-manager");
+							= HttpMDTInstanceManagerClient.connect("http://localhost:12985/instance-manager");
 		
 		AASRegistry registry = mdtClient.getAssetAdministrationShellRegistry();
 		for ( AssetAdministrationShellDescriptor aasDesc: registry.getAllAssetAdministrationShellDescriptors() ) {

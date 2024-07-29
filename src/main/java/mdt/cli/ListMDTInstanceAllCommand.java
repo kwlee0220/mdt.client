@@ -17,9 +17,9 @@ import utils.UnitUtils;
 import utils.stream.FStream;
 
 import mdt.client.MDTClientConfig;
-import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.IdPair;
+import mdt.model.instance.MDTInstance;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Help.Ansi;
@@ -60,7 +60,7 @@ public class ListMDTInstanceAllCommand extends MDTCommand {
 			StopWatch watch = StopWatch.start();
 			
 			try {
-				List<HttpMDTInstanceClient> instances;
+				List<MDTInstance> instances;
 				if ( m_filter == null ) {
 					instances = mgr.getAllInstances();
 				}
@@ -113,7 +113,7 @@ public class ListMDTInstanceAllCommand extends MDTCommand {
 		}
 	}
 	
-	private String buildOutputString(List<HttpMDTInstanceClient> instances) {
+	private String buildOutputString(List<MDTInstance> instances) {
 		if ( m_long ) {
 			if ( m_tableFormat ) {
 				return buildLongTableString(instances);
@@ -132,10 +132,10 @@ public class ListMDTInstanceAllCommand extends MDTCommand {
 		}
 	}
 	
-	private String buildListString(List<HttpMDTInstanceClient> instances) {
+	private String buildListString(List<MDTInstance> instances) {
 		try ( ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			PrintStream out = new PrintStream(baos) ) {
-			for ( HttpMDTInstanceClient inst : instances ) {
+			for ( MDTInstance inst : instances ) {
 				System.out.println(FStream.of(toShortColumns(inst)).map(Object::toString).join('|'));
 			}
 			out.close();
@@ -146,11 +146,11 @@ public class ListMDTInstanceAllCommand extends MDTCommand {
 		}
 	}
 	
-	private String buildLongListString(List<HttpMDTInstanceClient> instances) {
+	private String buildLongListString(List<MDTInstance> instances) {
 		try ( ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				PrintStream out = new PrintStream(baos) ) {
 			int seqNo = 0;
-			for ( HttpMDTInstanceClient inst : instances ) {
+			for ( MDTInstance inst : instances ) {
 				System.out.println(FStream.of(toLongColumns(seqNo, inst)).map(Object::toString).join('|'));
 				++seqNo;
 			}
@@ -162,7 +162,7 @@ public class ListMDTInstanceAllCommand extends MDTCommand {
 		}
 	}
 	
-	private String buildTableString(List<HttpMDTInstanceClient> instances) {
+	private String buildTableString(List<MDTInstance> instances) {
 		Table table = new Table(3);
 		table.setColumnWidth(1, 20, 70);
 		
@@ -170,7 +170,7 @@ public class ListMDTInstanceAllCommand extends MDTCommand {
 		table.addCell(" AAS_ID ");
 		table.addCell(" ENDPOINT ");
 		
-		for ( HttpMDTInstanceClient inst : instances ) {
+		for ( MDTInstance inst : instances ) {
 			FStream.of(toShortColumns(inst))
 					.map(Object::toString)
 					.forEach(table::addCell);
@@ -178,7 +178,7 @@ public class ListMDTInstanceAllCommand extends MDTCommand {
 		return table.render();
 	}
 	
-	private String buildLongTableString(List<HttpMDTInstanceClient> instances) {
+	private String buildLongTableString(List<MDTInstance> instances) {
 		Table table = new Table(6);
 		table.setColumnWidth(2, 20, 70);
 		table.setColumnWidth(3, 20, 45);
@@ -191,7 +191,7 @@ public class ListMDTInstanceAllCommand extends MDTCommand {
 		table.addCell(" ENDPOINT ");
 		
 		int seqNo = 1;
-		for ( HttpMDTInstanceClient inst : instances ) {
+		for ( MDTInstance inst : instances ) {
 			FStream.of(toLongColumns(seqNo, inst))
 					.map(Object::toString)
 					.forEach(table::addCell);
@@ -200,7 +200,7 @@ public class ListMDTInstanceAllCommand extends MDTCommand {
 		return table.render();
 	}
 	
-	private Object[] toShortColumns(HttpMDTInstanceClient instance) {
+	private Object[] toShortColumns(MDTInstance instance) {
 		return new Object[] {
 			instance.getId(),
 			instance.getAasId(),
@@ -208,7 +208,7 @@ public class ListMDTInstanceAllCommand extends MDTCommand {
 		};
 	}
 	
-	private Object[] toLongColumns(int seqNo, HttpMDTInstanceClient instance) {
+	private Object[] toLongColumns(int seqNo, MDTInstance instance) {
 		String submodelIdCsv = FStream.from(instance.getSubmodelIdShorts()).join(",");
 		
 		String serviceEndpoint = ObjectUtils.defaultIfNull(instance.getEndpoint(), "");
