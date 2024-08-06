@@ -10,9 +10,11 @@ import mdt.model.DataType;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class PropertyValue<T> implements SubmodelElementValue, Supplier<T> {
+public abstract class PropertyValue<T> implements SubmodelElementValue, Supplier<T> {
 	private final DataType<T> m_type;
 	private T m_value;
+	
+	abstract public void setString(String str);
 
 	protected PropertyValue(DataType<T> type) {
 		this.m_type = type;
@@ -27,6 +29,10 @@ public class PropertyValue<T> implements SubmodelElementValue, Supplier<T> {
 	@Override
 	public T get() {
 		return m_value;
+	}
+	
+	public void set(T value) {
+		m_value = value;
 	}
 
 	@Override

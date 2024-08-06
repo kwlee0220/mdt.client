@@ -19,6 +19,28 @@ import mdt.model.DataTypes;
  * @author Kang-Woo Lee (ETRI)
  */
 public class ElementValues {
+	public static Class<? extends SubmodelElementValue> getValueClass(SubmodelElement element) {
+		if ( element instanceof Property prop ) {
+			return PropertyValue.class;
+		}
+		else if ( element instanceof SubmodelElementCollection ) {
+			return SubmodelElementCollectionValue.class;
+		}
+		else if ( element instanceof SubmodelElementList ) {
+			return SubmodelElementListValue.class;
+		}
+		else if ( element instanceof MultiLanguageProperty ) {
+			return MultiLanguagePropertyValue.class;
+		}
+		else if ( element instanceof Range ) {
+			return RangeValue.class;
+		}
+		else {
+			String msg = String.format("(SubmodelElementValue) type=%s", element.getClass().getSimpleName());
+			throw new UnsupportedOperationException(msg);
+		}
+	}
+	
 	public static SubmodelElementValue getValue(SubmodelElement element) {
 		if ( element instanceof Property prop ) {
 			return getPropertyValue(prop);
@@ -47,7 +69,7 @@ public class ElementValues {
 			dtype = DataTypes.STRING;
 		}
 		if ( prop.getValue() != null ) {
-			return new PropertyValue<>(dtype, prop.getValue());
+			return PropertyValues.fromDataType(dtype, prop.getValue());
 		}
 		else {
 			return null;

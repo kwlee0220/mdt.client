@@ -8,7 +8,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Endpoint;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
 
 import mdt.model.AASUtils;
-import mdt.model.ModelConverter;
+import mdt.model.DescriptorUtils;
 import mdt.model.registry.RegistryException;
 import mdt.model.registry.SubmodelRegistry;
 import okhttp3.OkHttpClient;
@@ -32,14 +32,16 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 	@Override
 	public List<SubmodelDescriptor> getAllSubmodelDescriptors()
 		throws RegistryException {
-		Request req = new Request.Builder().url(m_endpoint).get().build();
+		String url = String.format("%s/submodel-descriptors", m_endpoint);
+		
+		Request req = new Request.Builder().url(url).get().build();
 		return callList(req, SubmodelDescriptor.class);
 	}
 
 	@Override
 	public List<SubmodelDescriptor>
 	getAllSubmodelDescriptorsByIdShort(String idShort) throws RegistryException {
-		String url = String.format("%s?idShort=%s", m_endpoint, idShort);
+		String url = String.format("%s/submodel-descriptors?idShort=%s", m_endpoint, idShort);
 		
 		Request req = new Request.Builder().url(url).get().build();
 		return callList(req, SubmodelDescriptor.class);
@@ -47,7 +49,7 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 
 	@Override
 	public SubmodelDescriptor getSubmodelDescriptorById(String submodelId) {
-		String url = String.format("%s/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(submodelId));
+		String url = String.format("%s/submodel-descriptors/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(submodelId));
 		
 		Request req = new Request.Builder().url(url).get().build();
 		return call(req, SubmodelDescriptor.class);
@@ -56,9 +58,10 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 	@Override
 	public SubmodelDescriptor postSubmodelDescriptor(SubmodelDescriptor desc) {
 		try {
+			String url = String.format("%s/submodel-descriptors", m_endpoint);
 			RequestBody reqBody = createRequestBody(desc);
 			
-			Request req = new Request.Builder().url(m_endpoint).post(reqBody).build();
+			Request req = new Request.Builder().url(url).post(reqBody).build();
 			return call(req, SubmodelDescriptor.class);
 		}
 		catch ( SerializationException e ) {
@@ -68,7 +71,7 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 
 	@Override
 	public SubmodelDescriptor putSubmodelDescriptorById(SubmodelDescriptor descriptor) {
-		String url = String.format("%s/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(descriptor.getId()));
+		String url = String.format("%s/submodel-descriptors/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(descriptor.getId()));
 		try {
 			RequestBody reqBody = createRequestBody(descriptor);
 			
@@ -82,7 +85,7 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 
 	@Override
 	public void deleteSubmodelDescriptorById(String submodelId) {
-		String url = String.format("%s/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(submodelId));
+		String url = String.format("%s/submodel-descriptors/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(submodelId));
 		
 		Request req = new Request.Builder().url(url).delete().build();
 		send(req);
@@ -91,7 +94,7 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 	public void setSubmodelRepositoryEndpoint(List<String> submodelIdList, String endpoint) {
 		for ( String submodelId: submodelIdList ) {
 			SubmodelDescriptor desc = getSubmodelDescriptorById(submodelId);
-			Endpoint ep = ModelConverter.createEndpoint(endpoint, "SUBMODEL-3.0");
+			Endpoint ep = DescriptorUtils.newEndpoint(endpoint, "SUBMODEL-3.0");
 			desc.setEndpoints(Arrays.asList(ep));
 			
 			putSubmodelDescriptorById(desc);

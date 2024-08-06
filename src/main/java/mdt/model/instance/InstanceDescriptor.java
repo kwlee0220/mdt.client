@@ -8,6 +8,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.AssetKind;
 
 
 /**
+ * <code>InstanceDescriptor</code>은 MDTInstance의 등록정보를 정의하는 인터페이스이다.
  *
  * @author Kang-Woo Lee (ETRI)
  */

@@ -6,8 +6,8 @@ import org.apache.commons.beanutils.PropertyUtils;
 
 import com.google.common.base.Preconditions;
 
-import mdt.client.SubmodelUtils;
 import mdt.ksx9101.AasCRUDOperations;
+import mdt.model.SubmodelUtils;
 
 /**
  *

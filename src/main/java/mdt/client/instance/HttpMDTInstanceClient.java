@@ -19,14 +19,13 @@ import utils.stream.FStream;
 import mdt.client.HttpAASRESTfulClient;
 import mdt.client.resource.HttpAASServiceClient;
 import mdt.client.resource.HttpSubmodelServiceClient;
-import mdt.model.ModelConverter;
+import mdt.model.DescriptorUtils;
 import mdt.model.instance.InstanceDescriptor;
 import mdt.model.instance.InstanceSubmodelDescriptor;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManagerException;
 import mdt.model.instance.MDTInstanceStatus;
 import mdt.model.registry.InvalidResourceStatusException;
-import mdt.model.registry.ResourceNotFoundException;
 import mdt.model.service.SubmodelService;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -165,7 +164,7 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 
 	@Override
 	public HttpAASServiceClient getAssetAdministrationShellService() {
-		String endpoint = ModelConverter.toAASServiceEndpointString(getEndpoint(), getAasId());
+		String endpoint = DescriptorUtils.toAASServiceEndpointString(getEndpoint(), getAasId());
 		if ( endpoint == null ) {
 			throw new InvalidResourceStatusException("AssetAdministrationShell",
 													String.format("mdt=%s, id=%s", getId(), getAasId()),
@@ -249,24 +248,13 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 		return  m_serde.readInstanceDescriptor(descJson);
 	}
 	
-	private InstanceSubmodelDescriptor getInstanceSubmodelDescriptorById(String submodelId) {
-		return FStream.from(m_desc.get().getInstanceSubmodelDescriptors())
-						.findFirst(d -> d.getId().equals(submodelId))
-						.getOrThrow(() -> new ResourceNotFoundException("Submodel", "id=" + submodelId));
-	}
-	private InstanceSubmodelDescriptor getInstanceSubmodelDescriptorByIdShort(String submodelIdShort) {
-		return FStream.from(m_desc.get().getInstanceSubmodelDescriptors())
-						.findFirst(d -> submodelIdShort.equals(d.getIdShort()))
-						.getOrThrow(() -> new ResourceNotFoundException("Submodel", "idShort=" + submodelIdShort));
-	}
-	
 	private SubmodelService toSubmodelService(String id) {
 		String baseEndpoint = getEndpoint();
 		if ( baseEndpoint == null ) {
 			throw new InvalidResourceStatusException("MDTInstance", "id=" + getId(), getStatus());
 		}
 		
-		String smEp = ModelConverter.toSubmodelServiceEndpointString(baseEndpoint, id);
+		String smEp = DescriptorUtils.toSubmodelServiceEndpointString(baseEndpoint, id);
 		return new HttpSubmodelServiceClient(getHttpClient(), smEp);
 	}
 }

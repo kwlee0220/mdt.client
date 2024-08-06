@@ -11,22 +11,22 @@ import mdt.model.AASUtils;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class TestData {
+public class TestSimulation {
 	public static final void main(String... args) throws Exception {
 		JsonSerializer ser = new JsonSerializer();
 		
-		String mdtId = "KRCW-02ER1A102";
-		int port = 10130;
+		String mdtId = "내함_성형";
+		int port = 10502;
 		
-		String id = AASUtils.encodeBase64UrlSafe(String.format("https://example.com/ids/%s/sm/Data", mdtId));
+		String id = AASUtils.encodeBase64UrlSafe(String.format("https://example.com/ids/%s/sm/Simulation/ProcessOptimization", mdtId));
 		String url = String.format("https://localhost:%d/api/v3.0/submodels/%s", port, id);
 		
 		HttpSubmodelServiceClient svc = HttpSubmodelServiceClient.newTrustAllSubmodelServiceClient(url);
-//		Submodel submodel = svc.getSubmodel();
+		Submodel submodel = svc.getSubmodel();
 //		System.out.println(ser.write(submodel));
 		
 		SubmodelElement sme;
-		sme = svc.getSubmodelElementByPath("DataInfo.Equipment.EquipmentParameterValues[1]");
+		sme = svc.getSubmodelElementByPath("SimulationInfo.Inputs[1]");
 		System.out.println(ser.write(sme));
 		
 //		DefaultInformationModel adaptor = new DefaultInformationModel();

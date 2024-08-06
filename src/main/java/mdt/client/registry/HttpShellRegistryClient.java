@@ -8,7 +8,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShellDescriptor
 import org.eclipse.digitaltwin.aas4j.v3.model.Endpoint;
 
 import mdt.model.AASUtils;
-import mdt.model.ModelConverter;
+import mdt.model.DescriptorUtils;
 import mdt.model.registry.AASRegistry;
 import mdt.model.registry.RegistryException;
 import okhttp3.OkHttpClient;
@@ -31,7 +31,7 @@ public class HttpShellRegistryClient extends HttpRegistryClient implements AASRe
 
 	@Override
 	public AssetAdministrationShellDescriptor getAssetAdministrationShellDescriptorById(String aasId) {
-		String url = String.format("%s/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(aasId));
+		String url = String.format("%s/shell-descriptors/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(aasId));
 		
 		Request req = new Request.Builder().url(url).get().build();
 		return call(req, AssetAdministrationShellDescriptor.class);
@@ -40,14 +40,16 @@ public class HttpShellRegistryClient extends HttpRegistryClient implements AASRe
 	@Override
 	public List<AssetAdministrationShellDescriptor> getAllAssetAdministrationShellDescriptors()
 		throws RegistryException {
-		Request req = new Request.Builder().url(m_endpoint).get().build();
+		String url = String.format("%s/shell-descriptors", m_endpoint);
+		
+		Request req = new Request.Builder().url(url).get().build();
 		return callList(req, AssetAdministrationShellDescriptor.class);
 	}
 
 	@Override
 	public List<AssetAdministrationShellDescriptor>
 	getAllAssetAdministrationShellDescriptorsByIdShort(String idShort) throws RegistryException {
-		String url = String.format("%s?idShort=%s", m_endpoint, idShort);
+		String url = String.format("%s/shell-descriptors?idShort=%s", m_endpoint, idShort);
 		
 		Request req = new Request.Builder().url(url).get().build();
 		return callList(req, AssetAdministrationShellDescriptor.class);
@@ -56,7 +58,7 @@ public class HttpShellRegistryClient extends HttpRegistryClient implements AASRe
 	@Override
 	public List<AssetAdministrationShellDescriptor>
 	getAssetAdministrationShellDescriptorByGlobalAssetId(String assetId) throws RegistryException {
-		String url = String.format("%s?assetId=%s", m_endpoint, assetId);
+		String url = String.format("%s/shell-descriptors?assetId=%s", m_endpoint, assetId);
 		
 		Request req = new Request.Builder().url(url).get().build();
 		return callList(req, AssetAdministrationShellDescriptor.class);
@@ -66,9 +68,10 @@ public class HttpShellRegistryClient extends HttpRegistryClient implements AASRe
 	public AssetAdministrationShellDescriptor
 	postAssetAdministrationShellDescriptor(AssetAdministrationShellDescriptor desc) {
 		try {
+			String url = String.format("%s/shell-descriptors", m_endpoint);
 			RequestBody reqBody = createRequestBody(desc);
 			
-			Request req = new Request.Builder().url(m_endpoint).post(reqBody).build();
+			Request req = new Request.Builder().url(url).post(reqBody).build();
 			return call(req, AssetAdministrationShellDescriptor.class);
 		}
 		catch ( SerializationException e ) {
@@ -80,9 +83,10 @@ public class HttpShellRegistryClient extends HttpRegistryClient implements AASRe
 	public AssetAdministrationShellDescriptor
 	putAssetAdministrationShellDescriptorById(AssetAdministrationShellDescriptor descriptor) {
 		try {
+			String url = String.format("%s/shell-descriptors", m_endpoint);
 			RequestBody reqBody = createRequestBody(descriptor);
 			
-			Request req = new Request.Builder().url(m_endpoint).put(reqBody).build();
+			Request req = new Request.Builder().url(url).put(reqBody).build();
 			return call(req, AssetAdministrationShellDescriptor.class);
 		}
 		catch ( SerializationException e ) {
@@ -92,7 +96,7 @@ public class HttpShellRegistryClient extends HttpRegistryClient implements AASRe
 
 	@Override
 	public void deleteAssetAdministrationShellDescriptorById(String aasId) {
-		String url = String.format("%s/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(aasId));
+		String url = String.format("%s/shell-descriptors/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(aasId));
 		
 		Request req = new Request.Builder().url(url).delete().build();
 		send(req);
@@ -101,7 +105,7 @@ public class HttpShellRegistryClient extends HttpRegistryClient implements AASRe
 	public void setAASRepositoryEndpoint(String aasId, String endpoint) {
 		AssetAdministrationShellDescriptor desc = getAssetAdministrationShellDescriptorById(aasId);
 		
-		Endpoint ep = ModelConverter.createEndpoint(endpoint, "AAS-3.0");
+		Endpoint ep = DescriptorUtils.newEndpoint(endpoint, "AAS-3.0");
 		desc.setEndpoints(Arrays.asList(ep));
 		
 		putAssetAdministrationShellDescriptorById(desc);

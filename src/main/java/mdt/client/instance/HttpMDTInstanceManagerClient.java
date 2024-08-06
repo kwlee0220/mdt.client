@@ -6,19 +6,17 @@ import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.model.Environment;
-import org.eclipse.digitaltwin.aas4j.v3.model.Key;
-import org.eclipse.digitaltwin.aas4j.v3.model.KeyTypes;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
-import com.google.common.base.Preconditions;
-
+import utils.func.Tuple;
 import utils.stream.FStream;
 
 import mdt.client.HttpAASRESTfulClient;
 import mdt.client.HttpServiceFactory;
 import mdt.client.MDTClientConfig;
-import mdt.client.Utils;
+import mdt.model.AASUtils;
+import mdt.model.SubmodelUtils;
 import mdt.model.instance.AddMDTInstancePayload;
 import mdt.model.instance.InstanceDescriptor;
 import mdt.model.instance.MDTInstance;
@@ -39,6 +37,8 @@ import okhttp3.RequestBody;
 
 
 /**
+ * <code>HttpMDTInstanceManagerClient</code>는 HTTP를 기반으로 하여 
+ * MDTInstanceManager를 원격으로 활용하기 위한 인터페이스를 정의한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -182,7 +182,7 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient
 		throws MDTInstanceManagerException {
 		try {
 			// AAS Environment 정의 파일을 읽어서 AAS Registry에 등록한다.
-			Environment env = Utils.readEnvironment(aasFile);
+			Environment env = AASUtils.readEnvironment(aasFile);
 			
 			AddMDTInstancePayload add = new AddMDTInstancePayload(id, env, arguments);
 			RequestBody reqBody = createRequestBody(add);
@@ -256,20 +256,10 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient
 
 	public SubmodelElement getSubmodelElementByReference(Reference ref)
 		throws ResourceNotFoundException, InvalidResourceStatusException, RegistryException {
-		Preconditions.checkArgument(ref != null);
-		Preconditions.checkArgument(ref.getKeys().size() > 1, "Empty Reference");
+		Tuple<String,String> info = SubmodelUtils.parseSubmodelReference(ref);
 		
-		Key submodelKey = ref.getKeys().get(0);
-		Preconditions.checkArgument(submodelKey.getType() == KeyTypes.SUBMODEL,
-									"The first key should be 'SUBMODEL'");
-		String idShortPath = FStream.from(ref.getKeys())
-									.drop(1)
-									.map(Key::getValue)
-									.join('.');
-		
-		String submodelId = submodelKey.getValue();
-		MDTInstance inst = getInstanceBySubmodelId(submodelId);
-		SubmodelService svc = inst.getSubmodelServiceById(submodelId);
-		return svc.getSubmodelElementByPath(idShortPath);
+		MDTInstance inst = getInstanceBySubmodelId(info._1);
+		SubmodelService svc = inst.getSubmodelServiceById(info._1);
+		return svc.getSubmodelElementByPath(info._2);
 	}
 }

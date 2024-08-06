@@ -21,6 +21,7 @@ import picocli.CommandLine.Option;
  */
 public abstract class MDTCommand extends HomeDirPicocliCommand {
 	private static final String ENVVAR_HOME = "MDT_CLIENT_HOME";
+	private static final String ENVVAR_MDT_ENDPOINT = "MDT_ENDPOINT";
 	private static final String CLIENT_CONFIG_FILE = "mdt_client_config.yaml";
 	
 	@Option(names={"--client_conf"}, paramLabel="path", description={"MDT management configuration file path"})
@@ -88,6 +89,13 @@ public abstract class MDTCommand extends HomeDirPicocliCommand {
 		if ( m_endpoint != null ) {
 			config.setEndpoint(m_endpoint);
 		}
+		else if ( config.getEndpoint() == null ) {
+			String endpoint = System.getenv(ENVVAR_MDT_ENDPOINT);
+			if ( endpoint != null ) {
+				config.setEndpoint(endpoint);
+			}
+		}
+		
 		run(config);
 	}
 }

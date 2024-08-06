@@ -47,6 +47,10 @@ public class HttpRESTfulClient {
 		return (obj instanceof String) ? (String)obj : m_mapper.writeValueAsString(obj);
 	}
 	
+	public RequestBody createRequestBody(String jsonString) {
+		return RequestBody.create(jsonString, JSON);
+	}
+	
 	public RequestBody createRequestBody(Object desc) throws JsonProcessingException {
 		return RequestBody.create(writeJson(desc), JSON);
 	}

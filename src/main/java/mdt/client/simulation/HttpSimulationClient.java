@@ -9,10 +9,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 
 import mdt.client.HttpRESTfulClient;
 import mdt.client.MDTClientException;
+import okhttp3.MediaType;
 import okhttp3.MultipartBody;
-import okhttp3.MultipartBody.Part;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 
 /**
@@ -21,6 +22,7 @@ import okhttp3.Response;
  */
 public class HttpSimulationClient {
 	private static final Logger s_logger = LoggerFactory.getLogger(HttpSimulationClient.class);
+	private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 	private static final TypeReference<OperationStatusResponse<Void>> RESPONSE_TYPE_REF
 													= new TypeReference<OperationStatusResponse<Void>>(){};
 	
@@ -32,18 +34,15 @@ public class HttpSimulationClient {
 		m_endpoint = endpoint;
 	}
 	
-	public OperationStatusResponse<Void> startSimulation(String parameters) {
-		MultipartBody body = new MultipartBody.Builder()
-									.setType(MultipartBody.FORM)
-									.addFormDataPart("parameters", parameters)
-									.build();
+	public OperationStatusResponse<Void> startSimulation(String paramtersJson) {
+		RequestBody body = RequestBody.create(paramtersJson, JSON);
 		if ( s_logger.isDebugEnabled() ) {
 			s_logger.debug("sending Simulation start request: url={}, body={}", m_endpoint, body);
 		}
 		
 		Request req = new Request.Builder().url(m_endpoint).post(body).build();
 		if ( s_logger.isDebugEnabled() ) {
-			s_logger.debug("sending: ({}) {}, body={}", req.method(), req.url(), parameters);
+			s_logger.debug("sending: ({}) {}, body={}", req.method(), req.url(), paramtersJson);
 		}
 		try {
 			Response resp =  m_restClient.getHttpClient().newCall(req).execute();
@@ -60,13 +59,13 @@ public class HttpSimulationClient {
 	}
 	
 	public OperationStatusResponse<Void> startSimulationWithSumodelId(String submodelId) {
-		String parameters = String.format("{ \"submodelId\": \"%s\"}", submodelId);
-		return startSimulation(parameters);
+		String paramJson = String.format("{ \"submodelId\": \"%s\"}", submodelId);
+		return startSimulation(paramJson);
 	}
 	
 	public OperationStatusResponse<Void> startSimulationWithEndpoint(String submodelEndpoint) {
-		String parameters = String.format("{ \"submodelEndpoint\": \"%s\"}", submodelEndpoint);
-		return startSimulation(parameters);
+		String paramJson = String.format("{ \"submodelEndpoint\": \"%s\"}", submodelEndpoint);
+		return startSimulation(paramJson);
 	}
 	
 	public OperationStatusResponse<Void> statusSimulation(String simulationHandle) {

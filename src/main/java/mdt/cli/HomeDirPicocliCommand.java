@@ -29,9 +29,6 @@ public abstract class HomeDirPicocliCommand implements Runnable, LoggerSettable 
 	@Spec protected CommandSpec m_spec;
 	@Mixin private UsageHelp m_help;
 	
-//	@Option(names={"--working_dir", "-w"}, description="Use the current working directory for home directory")
-//	private boolean m_useWorkingDir = false;
-	
 	private final FOption<String> m_homeDirEnvVarName;
 	private Path m_homeDir = null;
 	private Logger m_logger = s_logger;

@@ -59,6 +59,7 @@ public class MDTCommandsMain implements Runnable {
 				GetMDTInstanceCommand.class,
 				GetAASCommand.class,
 				GetSubmodelCommand.class,
+				GetPropertyCommand.class,
 				GetKSX9101Command.class,
 			})
 	public static class GetCommand implements Runnable {
@@ -108,21 +109,6 @@ public class MDTCommandsMain implements Runnable {
 				ListSubmodelAllCommand.class,
 			})
 	public static class SubmodelCommand implements Runnable {
-		@Spec private CommandSpec m_spec;
-		@Mixin private UsageHelp m_help;
-		
-		@Override
-		public void run() {
-			m_spec.commandLine().usage(System.out, Ansi.OFF);
-		}
-	}
-
-	@Command(name="property",
-			description="Property related commands",
-			subcommands= {
-				GetPropertyCommand.class,
-			})
-	public static class PropertyCommand implements Runnable {
 		@Spec private CommandSpec m_spec;
 		@Mixin private UsageHelp m_help;
 		

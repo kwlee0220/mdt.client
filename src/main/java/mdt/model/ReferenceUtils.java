@@ -20,6 +20,29 @@ import lombok.experimental.UtilityClass;
  */
 @UtilityClass
 public class ReferenceUtils {
+	public static void assertModelReference(Reference ref) {
+		if ( ref.getType() != ReferenceTypes.MODEL_REFERENCE ) {
+			throw new IllegalArgumentException("Not ModelReference: type=" + ref.getType());
+		}
+	}
+	public static void assertSubmodelReference(Reference ref) {
+		assertModelReference(ref);
+		
+		List<Key> keySeq = ref.getKeys();
+		if ( !(keySeq.size() == 1 && keySeq.get(0).getType() == KeyTypes.SUBMODEL) ) {
+			throw new IllegalArgumentException("Not Submodel Reference: keys" + keySeq);
+		}
+	}
+	public static void assertSubmodelElementReference(Reference ref) {
+		assertModelReference(ref);
+		
+		List<Key> keySeq = ref.getKeys();
+		if ( !(keySeq.size() > 1
+				&& keySeq.get(0).getType() == KeyTypes.SUBMODEL) ) {
+			throw new IllegalArgumentException("Not SubmodelElement Reference: keys" + keySeq);
+		}
+	}
+	
 	public static Reference toAASReference(String id) {
 		Key key = new DefaultKey.Builder()
 								.value(id)

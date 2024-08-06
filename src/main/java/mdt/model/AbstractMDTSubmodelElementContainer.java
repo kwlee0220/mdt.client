@@ -18,7 +18,6 @@ import utils.InternalException;
 import utils.func.Try;
 import utils.stream.FStream;
 
-import mdt.client.SubmodelUtils;
 import mdt.ksx9101.AasCRUDOperations;
 
 

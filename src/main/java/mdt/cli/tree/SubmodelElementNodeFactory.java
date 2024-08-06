@@ -1,6 +1,7 @@
 package mdt.cli.tree;
 
 import org.barfuin.texttree.api.Node;
+import org.eclipse.digitaltwin.aas4j.v3.model.Operation;
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
@@ -22,6 +23,9 @@ public class SubmodelElementNodeFactory {
 		}
 		else if ( smElm instanceof SubmodelElementList smel) {
 			return new SubmodelElementListNode(prefix, smel);
+		}
+		else if ( smElm instanceof Operation op) {
+			return new AASOperationNode(op);
 		}
 
 		return null;

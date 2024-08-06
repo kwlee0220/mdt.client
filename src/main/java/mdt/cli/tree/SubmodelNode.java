@@ -41,6 +41,7 @@ public final class SubmodelNode implements Node {
 		
 		FStream.from(m_submodel.getSubmodelElements())
 				.map(sme -> SubmodelElementNodeFactory.toNode("", sme))
+				.filter(node -> node != null)
 				.forEach(children::add);
 		
 		return children;

@@ -176,6 +176,17 @@ public interface MDTInstance {
 	public default List<InstanceSubmodelDescriptor> getInstanceSubmodelDescriptors() {
 		return getInstanceDescriptor().getInstanceSubmodelDescriptors();
 	}
+	public default InstanceSubmodelDescriptor getInstanceSubmodelDescriptorByIdShort(String idShort) {
+		return Funcs.findFirst(getInstanceDescriptor().getInstanceSubmodelDescriptors(),
+								isd -> isd.getIdShort().equals(idShort))
+					.getOrThrow(() -> new ResourceNotFoundException("Submodel",
+														String.format("instance[%s].%s", getId(), idShort)));
+	}
+	public default InstanceSubmodelDescriptor getInstanceSubmodelDescriptorById(String submodelId) {
+		return Funcs.findFirst(getInstanceDescriptor().getInstanceSubmodelDescriptors(),
+								isd -> isd.getId().equals(submodelId))
+					.getOrThrow(() -> new ResourceNotFoundException("Submodel", "id=" + submodelId));
+	}
 	
 	public default List<String> getSubmodelIdShorts() {
 		return Funcs.map(getInstanceDescriptor().getInstanceSubmodelDescriptors(),

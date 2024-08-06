@@ -20,7 +20,7 @@ import utils.stream.FStream;
 import mdt.client.MDTClientConfig;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
-import mdt.model.ModelConverter;
+import mdt.model.DescriptorUtils;
 import mdt.model.instance.MDTInstance;
 import mdt.model.registry.ResourceNotFoundException;
 import mdt.model.service.AssetAdministrationShellService;
@@ -160,7 +160,7 @@ public class GetAASCommand extends MDTCommand {
 					table.addCell(String.format(" SUB_MODEL_REF_[%02d] ", tup.index()));
 					table.addCell(" " + tup.value() + " ");
 				});
-		String aasEp = ModelConverter.toAASServiceEndpointString(instance.getEndpoint(), aas.getId());
+		String aasEp = DescriptorUtils.toAASServiceEndpointString(instance.getEndpoint(), aas.getId());
 		table.addCell(" ENDPOINT "); table.addCell(" " + getOrEmpty(aasEp));
 		
 		System.out.println(table.render());

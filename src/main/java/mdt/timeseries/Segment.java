@@ -20,8 +20,8 @@ import com.google.common.collect.Lists;
 
 import lombok.Getter;
 import lombok.Setter;
-import mdt.client.SubmodelUtils;
 import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelUtils;
 import mdt.model.resource.value.MultiLanguagePropertyValue;
 
 

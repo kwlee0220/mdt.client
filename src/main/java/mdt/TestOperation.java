@@ -1,18 +1,17 @@
 package mdt;
 
-import java.time.Duration;
 import java.util.List;
 
-import org.eclipse.digitaltwin.aas4j.v3.model.Property;
-import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
+import org.eclipse.digitaltwin.aas4j.v3.model.OperationResult;
+import org.eclipse.digitaltwin.aas4j.v3.model.OperationVariable;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultOperationVariable;
 
-import utils.async.StartableExecution;
 import utils.func.KeyValue;
 import utils.stream.FStream;
 
-import mdt.client.SubmodelUtils;
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.AASUtils;
+import mdt.model.SubmodelUtils;
 
 /**
  *
@@ -25,17 +24,18 @@ public class TestOperation {
 		
 		HttpSubmodelServiceClient svc = HttpSubmodelServiceClient.newTrustAllSubmodelServiceClient(url);
 		
-		List<Property> inputValues
+		List<OperationVariable> inputVars
 			= FStream.from(List.of(KeyValue.of("HT_ProcessTime", "30"), KeyValue.of("HT_FaultRate", "0.7")))
 						.map(kv -> SubmodelUtils.newStringProperty(kv.key(), kv.value()))
+						.map(prop -> new DefaultOperationVariable.Builder().value(prop).build())
+						.cast(OperationVariable.class)
 						.toList();
 //		List<SubmodelElement> outputs = svc.runOperationAsync("Operation", inputValues,
 //															Duration.ofMinutes(5), Duration.ofSeconds(5));
 //		System.out.println(outputs);
-		StartableExecution<List<SubmodelElement>> exec
-				= AASUtils.toAsyncOperation(svc, "Operation2", inputValues,
-											Duration.ofMinutes(5), Duration.ofSeconds(5));
-		exec.start();
-		System.out.println(exec.get());
+		
+		javax.xml.datatype.Duration jtimeout = AASUtils.DATATYPE_FACTORY.newDuration(5*60*1000);
+		OperationResult result = svc.invokeOperationSync("Operation2", inputVars, List.of(), jtimeout);
+		System.out.println(result.getOutputArguments());
 	}
 }

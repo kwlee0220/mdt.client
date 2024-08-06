@@ -14,7 +14,6 @@ import utils.UnitUtils;
 import utils.func.Funcs;
 
 import mdt.client.MDTClientConfig;
-import mdt.client.SubmodelUtils;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.client.resource.HttpSubmodelServiceClient;
@@ -22,7 +21,8 @@ import mdt.client.simulation.HttpSimulationClient;
 import mdt.client.simulation.OperationStatus;
 import mdt.client.simulation.OperationStatusResponse;
 import mdt.ksx9101.simulation.Simulation;
-import mdt.model.ModelConverter;
+import mdt.model.DescriptorUtils;
+import mdt.model.SubmodelUtils;
 import mdt.model.registry.ResourceNotFoundException;
 import mdt.model.registry.SubmodelRegistry;
 import picocli.CommandLine;
@@ -121,7 +121,7 @@ public class StartSimulationCommand extends MDTCommand {
 			simulationSubmodelDesc = simulations.get(0);
 		}
 		
-		String simulationSubmodelEndpoint = ModelConverter.getEndpointString(simulationSubmodelDesc.getEndpoints());
+		String simulationSubmodelEndpoint = DescriptorUtils.getEndpointString(simulationSubmodelDesc.getEndpoints());
 		if ( simulationSubmodelEndpoint == null ) {
 			System.err.printf("Target Simulation is not ready to run. Submodel id: %s%n",
 								simulationSubmodelDesc.getId());

@@ -9,8 +9,8 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import mdt.ksx9101.model.Data;
 import mdt.ksx9101.model.InformationModel;
@@ -30,29 +30,46 @@ public class ForEach {
 		OUTPUT_DIR.mkdirs();
 		
 		Stream.of(MODEL_DIR.listFiles())
-				.filter(file -> file.getName().startsWith("conf_"))
-				.forEach(ForEach::addCertificateConfig);
+				.filter(file -> file.getName().startsWith("conf_KR"))
+				.forEach(ForEach::changeIdShort);
 	}
 	
-	private static void addCertificateConfig(File confFile) {
+//	private static void addCertificateConfig(File confFile) {
+//		try ( InputStream is = new FileInputStream(confFile) ) {
+//			JsonNode root = MAPPER.readTree(confFile);
+//			
+//			ArrayNode endpoints = (ArrayNode)root.at("/endpoints");
+//			ObjectNode endpoint = (ObjectNode)endpoints.get(0);
+//			
+//			ObjectNode certNode = MAPPER.createObjectNode();
+//			certNode.put("keyStoreType", "PKCS12");
+//			certNode.put("keyStorePath", "mdt.p12");
+//			certNode.put("keyStorePassword", "mdt2024^^");
+//			certNode.put("keyAlias", "server-key");
+//			certNode.put("keyPassword", "mdt2024^^");
+//			endpoint.set("certificate", certNode);
+//			
+//			File toModelFile = new File(OUTPUT_DIR, confFile.getName());
+//			MAPPER.writerWithDefaultPrettyPrinter()
+//					.writeValue(toModelFile, root);
+//			System.out.println("update conf file: " + toModelFile);
+//		}
+//		catch ( Exception e ) {
+//			e.printStackTrace();
+//		}
+//	}
+	
+	private static void changeIdShort(File confFile) {
 		try ( InputStream is = new FileInputStream(confFile) ) {
 			JsonNode root = MAPPER.readTree(confFile);
 			
-			ArrayNode endpoints = (ArrayNode)root.at("/endpoints");
-			ObjectNode endpoint = (ObjectNode)endpoints.get(0);
+			ObjectNode entity = (ObjectNode)root.at("/persistence/entities/0");
+			entity.put("idShort", "Equipment");
 			
-			ObjectNode certNode = MAPPER.createObjectNode();
-			certNode.put("keyStoreType", "PKCS12");
-			certNode.put("keyStorePath", "mdt.p12");
-			certNode.put("keyStorePassword", "mdt2024^^");
-			certNode.put("keyAlias", "server-key");
-			certNode.put("keyPassword", "mdt2024^^");
-			endpoint.set("certificate", certNode);
-			
+			File dir = confFile.getParentFile();
 			File toModelFile = new File(OUTPUT_DIR, confFile.getName());
 			MAPPER.writerWithDefaultPrettyPrinter()
 					.writeValue(toModelFile, root);
-			System.out.println("update conf file: " + toModelFile);
 		}
 		catch ( Exception e ) {
 			e.printStackTrace();

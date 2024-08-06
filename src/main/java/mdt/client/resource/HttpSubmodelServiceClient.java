@@ -11,7 +11,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.BaseOperationResult;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationHandle;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationResult;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationVariable;
-import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultOperationRequest;
@@ -26,7 +25,6 @@ import mdt.client.SSLUtils;
 import mdt.model.registry.RegistryException;
 import mdt.model.registry.ResourceNotFoundException;
 import mdt.model.resource.MDTOperationHandle;
-import mdt.model.resource.value.PropertyValues.StringValue;
 import mdt.model.resource.value.SubmodelElementValue;
 import mdt.model.service.SubmodelService;
 import okhttp3.OkHttpClient;
@@ -55,6 +53,10 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 		catch ( Exception e ) {
 			throw new MDTClientException("Failed to create a trust-all client", e);
 		}
+	}
+	
+	public String getUrl() {
+		return m_url;
 	}
 	
 	@Override

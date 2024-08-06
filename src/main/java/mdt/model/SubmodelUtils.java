@@ -1,10 +1,11 @@
-package mdt.client;
+package mdt.model;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,13 +23,16 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultKey;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultLangStringTextType;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultMultiLanguageProperty;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultProperty;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultReference;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodelElementCollection;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import utils.CSV;
 import utils.func.Try;
@@ -36,7 +40,6 @@ import utils.func.Tuple;
 import utils.stream.FStream;
 
 import lombok.experimental.UtilityClass;
-import mdt.model.DataTypes;
 import mdt.model.registry.ResourceNotFoundException;
 import mdt.model.resource.value.MultiLanguagePropertyValue;
 
@@ -142,6 +145,16 @@ public class SubmodelUtils {
 		return getPropertyValue(prop, valueClass);
 	}
 	
+	public static String toRelativeIdShortPath(String ancestor, String descendant) {
+		if ( descendant.startsWith(ancestor) ) {
+			int prefixLen = ancestor.length();
+			return (descendant.length() > prefixLen) ? descendant.substring(prefixLen + 1) : "";
+		}
+		else {
+			return null;
+		}
+	}
+	
 	public static SubmodelElement traverse(SubmodelElement root, String idShortPath) {
 		SubmodelElement current = root;
 		for ( String seg: CSV.parseCsv(idShortPath, '.')
@@ -178,6 +191,20 @@ public class SubmodelUtils {
 		else {
 			throw new IllegalArgumentException("Cannot cast to " + toClass);
 		}
+	}
+	
+	public Tuple<String,String> parseSubmodelReference(Reference ref) {
+		Preconditions.checkArgument(ref != null);
+		Preconditions.checkArgument(ref.getKeys().size() > 1, "Empty Reference");
+		
+		Key submodelKey = ref.getKeys().get(0);
+		Preconditions.checkArgument(submodelKey.getType() == KeyTypes.SUBMODEL,
+									"The first key should be 'SUBMODEL'");
+		String idShortPath = FStream.from(ref.getKeys())
+									.drop(1)
+									.map(Key::getValue)
+									.join('.');
+		return Tuple.of(submodelKey.getValue(), idShortPath);
 	}
 	
 	public static Tuple<String,List<String>> parseModelReference(Reference ref) {
@@ -253,6 +280,83 @@ public class SubmodelUtils {
 		return null;
 	}
 
+	private static final Pattern REF_TYPE_PATTERN = Pattern.compile("\\w+(\\-(\\S+))?");
+	public static Reference parseReferenceSerizalization(String serialized) {
+		serialized = serialized.trim();
+		
+		Reference semanticId = null;
+		ReferenceTypes refType = null;
+		if ( serialized.charAt(0) == '[' ) {
+			int idx = serialized.indexOf(']');
+			String refTypeStr = serialized.substring(1, idx).trim();
+			serialized = serialized.substring(idx+1);
+			
+			idx = refTypeStr.indexOf('-');
+			if ( idx >= 0 ) {
+				String semanticIdStr = null;
+				String realRefTypeStr = refTypeStr.substring(0, idx).trim();
+				switch ( realRefTypeStr ) {
+					case "ModelRef":
+						refType = ReferenceTypes.MODEL_REFERENCE;
+						semanticIdStr = refTypeStr.substring(idx+1, refTypeStr.lastIndexOf('-')).trim();
+						break;
+					case "ExternalRef":
+						refType = ReferenceTypes.EXTERNAL_REFERENCE;
+						semanticIdStr = refTypeStr.substring(idx+1, refTypeStr.lastIndexOf('-')).trim();
+						break;
+					default:
+						throw new IllegalArgumentException("invalid ReferenceTypes: " + refTypeStr);
+				}
+				if ( semanticIdStr != null ) {
+					semanticId = parseReferenceSerizalization(semanticIdStr);
+				}
+			}
+			
+			Matcher matcher = REF_TYPE_PATTERN.matcher(refTypeStr);
+			if ( !matcher.find() ) {
+				throw new IllegalArgumentException("Invalid ReferenceTypes: " + refTypeStr);
+			}
+			
+			switch ( matcher.group(0) ) {
+				case "ModelRef":
+					refType = ReferenceTypes.MODEL_REFERENCE;
+					break;
+				default:
+					refType = ReferenceTypes.EXTERNAL_REFERENCE;
+					break;
+			}
+		}
+		
+		List<Key> keyList = parparseKeyListSerialization(serialized);
+		if ( refType == null ) {
+			if ( keyList.get(0).getType() == KeyTypes.GLOBAL_REFERENCE ) {
+				refType = ReferenceTypes.EXTERNAL_REFERENCE;
+			}
+			else {
+				refType = ReferenceTypes.MODEL_REFERENCE;
+			}
+		}
+		
+		return new DefaultReference.Builder()
+									.keys(keyList)
+									.type(refType)
+									.referredSemanticId(semanticId)
+									.build();
+	}
+	
+	private static List<Key> parparseKeyListSerialization(String str) {
+		return CSV.parseCsv(str).map(keyStr -> parseKeySerialization(keyStr)).toList();
+	}
+
+	private static final Pattern KEY_SER_PATTERN = Pattern.compile("\\((\\w+)\\)(\\S+)");
+	private static Key parseKeySerialization(String str) {
+		Matcher matcher = KEY_SER_PATTERN.matcher(str);
+		matcher.find();
+		
+		KeyTypes type = KEY_TYPES_MAP.get(matcher.group(1));
+		return new DefaultKey.Builder().type(type).value(matcher.group(2)).build();
+	}
+
 	private static final Pattern PATTERN = Pattern.compile("(\\w*)(\\[(d+)\\])?");
 	private static List<String> parsePathSegment(String idShort) {
 		Matcher matcher = PATTERN.matcher(idShort);
@@ -265,8 +369,37 @@ public class SubmodelUtils {
 			case 0 -> matches;
 			case 2 -> List.of(matches.get(0));
 			case 4 -> List.of(matches.get(1));
-			case 5 -> List.of(matches.get(1), matches.get(2));
+			case 5 -> List.of(matches.get(0), matches.get(2));
 			default -> throw new AssertionError();
 		};
 	}
+	
+	private static final Map<String,KeyTypes> KEY_TYPES_MAP = Maps.newHashMap();
+	static {
+		KEY_TYPES_MAP.put("AnnotatedRelationshipElement", KeyTypes.ANNOTATED_RELATIONSHIP_ELEMENT);
+		KEY_TYPES_MAP.put("AssetAdministrationShell", KeyTypes.ASSET_ADMINISTRATION_SHELL);
+		KEY_TYPES_MAP.put("BaseEventElement", KeyTypes.BASIC_EVENT_ELEMENT);
+		KEY_TYPES_MAP.put("Blob", KeyTypes.BLOB);
+		KEY_TYPES_MAP.put("Capability", KeyTypes.CAPABILITY);
+		KEY_TYPES_MAP.put("ConceptDescription", KeyTypes.CONCEPT_DESCRIPTION);
+		KEY_TYPES_MAP.put("DataElement", KeyTypes.DATA_ELEMENT);
+		KEY_TYPES_MAP.put("Entity", KeyTypes.ENTITY);
+		KEY_TYPES_MAP.put("EventElement", KeyTypes.EVENT_ELEMENT);
+		KEY_TYPES_MAP.put("File", KeyTypes.FILE);
+		KEY_TYPES_MAP.put("FragmentReference", KeyTypes.FRAGMENT_REFERENCE);
+		KEY_TYPES_MAP.put("GlobalReference", KeyTypes.GLOBAL_REFERENCE);
+		KEY_TYPES_MAP.put("Identifiable", KeyTypes.IDENTIFIABLE);
+		KEY_TYPES_MAP.put("MultiLanguageProperty", KeyTypes.MULTI_LANGUAGE_PROPERTY);
+		KEY_TYPES_MAP.put("Operation", KeyTypes.OPERATION);
+		KEY_TYPES_MAP.put("Property", KeyTypes.PROPERTY);
+		KEY_TYPES_MAP.put("Range", KeyTypes.RANGE);
+		KEY_TYPES_MAP.put("Referable", KeyTypes.REFERABLE);
+		KEY_TYPES_MAP.put("ReferenceElement", KeyTypes.REFERENCE_ELEMENT);
+		KEY_TYPES_MAP.put("RelationshipElement", KeyTypes.RELATIONSHIP_ELEMENT);
+		KEY_TYPES_MAP.put("Submodel", KeyTypes.SUBMODEL);
+		KEY_TYPES_MAP.put("SubmodelElement", KeyTypes.SUBMODEL_ELEMENT);
+		KEY_TYPES_MAP.put("SubmodelElementCollection", KeyTypes.SUBMODEL_ELEMENT_COLLECTION);
+		KEY_TYPES_MAP.put("SubmodelElementList", KeyTypes.SUBMODEL_ELEMENT_LIST);
+	}
+	
 }

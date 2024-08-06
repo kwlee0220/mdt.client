@@ -5,12 +5,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import mdt.client.MDTClientConfig;
-import mdt.client.SubmodelUtils;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.client.simulation.HttpSimulationClient;
 import mdt.client.simulation.OperationStatusResponse;
 import mdt.ksx9101.simulation.Simulation;
+import mdt.model.SubmodelUtils;
 import mdt.model.registry.ResourceNotFoundException;
 import mdt.model.service.SubmodelService;
 import picocli.CommandLine;

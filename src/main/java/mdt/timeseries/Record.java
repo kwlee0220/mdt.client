@@ -19,10 +19,10 @@ import com.google.common.base.Preconditions;
 import utils.Indexed;
 import utils.stream.FStream;
 
-import mdt.client.SubmodelUtils;
 import mdt.model.AbstractMDTSubmodelElementCollection;
 import mdt.model.DataType;
 import mdt.model.DataTypes;
+import mdt.model.SubmodelUtils;
 import mdt.timeseries.RecordSchema.Field;
 
 

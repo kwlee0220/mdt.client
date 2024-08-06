@@ -13,7 +13,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.OperationResult;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationVariable;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
-import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultOperationVariable;
 
 import utils.stream.FStream;
 
@@ -48,28 +47,20 @@ public interface SubmodelService {
 	public OperationResult getOperationAsyncResult(OperationHandle handleId);
 	public BaseOperationResult getOperationAsyncStatus(OperationHandle handleId);
 	
-	public default List<SubmodelElement> runOperationAsync(String operationPath,
-															List<? extends SubmodelElement> inputValues,
-															Duration timeout, Duration pollInterval)
+	public default OperationResult runOperationAsync(String operationPath,
+														List<OperationVariable> inputArguments,
+														List<OperationVariable> inoutputArguments,
+														Duration timeout, Duration pollInterval)
 		throws InterruptedException, CancellationException, TimeoutException, ExecutionException {
-		List<OperationVariable> inputVariables
-							= FStream.from(inputValues)
-									.map(sme -> new DefaultOperationVariable.Builder().value(sme).build())
-									.cast(OperationVariable.class)
-									.toList();
 		javax.xml.datatype.Duration jtimeout = AASUtils.DATATYPE_FACTORY.newDuration(timeout.toMillis());
 		
-		OperationHandle handle = invokeOperationAsync(operationPath, inputVariables, List.of(), jtimeout);
+		OperationHandle handle = invokeOperationAsync(operationPath, inputArguments, inoutputArguments, jtimeout);
 		boolean finished = false;
 		while ( !finished ) {
 			TimeUnit.MILLISECONDS.sleep(pollInterval.toMillis());
 			finished = checkAsyncOpFinished(handle);
 		}
-		OperationResult result = getOperationAsyncResult(handle);
-		
-		return FStream.from(result.getOutputArguments())
-						.map(ov -> ov.getValue())
-						.toList();
+		return getOperationAsyncResult(handle);
 	}
 	
 	private boolean checkAsyncOpFinished(OperationHandle handle)

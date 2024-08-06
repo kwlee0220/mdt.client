@@ -20,8 +20,8 @@ public class TestEquipment {
 	public static final void main(String... args) throws Exception {
 		JsonSerializer ser = new JsonSerializer();
 		
-		String equipId = "KRCW-01ESUU001";
-		int port = 10100;
+		String equipId = "KRCW-02ER1A101";
+		int port = 10117;
 		
 		String id = AASUtils.encodeBase64UrlSafe(String.format("https://example.com/ids/%s/sm/Data", equipId));
 		String url = String.format("https://localhost:%d/api/v3.0/submodels/%s", port, id);

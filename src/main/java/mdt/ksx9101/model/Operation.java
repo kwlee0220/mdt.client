@@ -6,8 +6,8 @@ import com.google.common.base.Preconditions;
 
 import utils.func.Funcs;
 
-import mdt.client.SubmodelUtils;
 import mdt.ksx9101.TopLevelEntity;
+import mdt.model.SubmodelUtils;
 
 /**
  *

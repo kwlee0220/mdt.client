@@ -2,9 +2,6 @@ package mdt.cli;
 
 import java.util.List;
 
-import org.barfuin.texttree.api.TextTree;
-import org.barfuin.texttree.api.TreeOptions;
-import org.barfuin.texttree.api.style.TreeStyles;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
 import org.eclipse.digitaltwin.aas4j.v3.model.LangStringNameType;
@@ -17,7 +14,6 @@ import org.slf4j.LoggerFactory;
 
 import utils.stream.FStream;
 
-import mdt.cli.tree.SubmodelNode;
 import mdt.client.MDTClientConfig;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
@@ -44,7 +40,7 @@ public class GetSubmodelCommand extends MDTCommand {
 	private String m_mdtId = null;
 	
 	@Option(names={"--output", "-o"}, paramLabel="type", required=false,
-			description="output type (candidnates: table, json, or tree)")
+			description="output type (candidnates: table or json)")
 	private String m_output = "table";
 	
 	public GetSubmodelCommand() {
@@ -75,9 +71,6 @@ public class GetSubmodelCommand extends MDTCommand {
 		}
 		else if ( m_output.equalsIgnoreCase("json") ) {
 			displayAsJson(submodelSvc);
-		}
-		else if ( m_output.equalsIgnoreCase("tree") ) {
-			displayAsTree(submodelSvc);
 		}
 		else {
 			System.err.println("Unknown output: " + m_output);
@@ -163,17 +156,6 @@ public class GetSubmodelCommand extends MDTCommand {
 //		table.addCell(" ENDPOINT "); table.addCell(" " + epStr);
 		
 		System.out.println(table.render());
-	}
-	
-	private void displayAsTree(SubmodelService submodelSvc)
-		throws SerializationException {
-		Submodel submodel = submodelSvc.getSubmodel();
-
-		TreeOptions opts = new TreeOptions();
-		opts.setStyle(TreeStyles.UNICODE_ROUNDED);
-		opts.setMaxDepth(5);
-		SubmodelNode root = new SubmodelNode(submodel);
-		System.out.println(TextTree.newInstance(opts).render(root));
 	}
 	
 	private String getOrEmpty(Object obj) {
