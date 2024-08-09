@@ -1,6 +1,6 @@
 package mdt.cli.tree.ksx9101;
 
-import utils.func.Funcs;
+import utils.func.FOption;
 
 import mdt.ksx9101.model.Equipment;
 import mdt.ksx9101.model.ParametricEntity;
@@ -24,7 +24,7 @@ public final class EquipmentNode extends ParametricEntityNode {
 
 	@Override
 	public String getText() {
-		String nameStr = Funcs.toNonNull(m_equipment.getEquipmentName(), m_equipment.getEquipmentId());
+		String nameStr = FOption.getOrElse(m_equipment.getEquipmentName(), m_equipment.getEquipmentId());
 		return String.format("Equipment (%s)", nameStr);
 	}
 }

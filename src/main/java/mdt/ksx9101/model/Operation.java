@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.google.common.base.Preconditions;
 
-import utils.func.Funcs;
+import utils.func.FOption;
 
 import mdt.ksx9101.TopLevelEntity;
 import mdt.model.SubmodelUtils;
@@ -54,6 +54,6 @@ public interface Operation extends ParametricEntity, TopLevelEntity {
 		catch ( NumberFormatException e ) {
 			pvalue = getParameterValue(seg1).orElse(null);
 		}
-		Funcs.acceptIfNonNull(pvalue, pv -> pv.setParameterValue((String)value));
+		FOption.accept(pvalue, pv -> pv.setParameterValue((String)value));
 	}
 }

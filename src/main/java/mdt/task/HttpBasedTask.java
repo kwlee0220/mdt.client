@@ -20,7 +20,6 @@ import utils.stream.FStream;
 import mdt.client.MDTClientException;
 import mdt.client.SSLUtils;
 import mdt.model.AASUtils;
-import okhttp3.OkHttpClient;
 import picocli.CommandLine.Option;
 
 
@@ -57,21 +56,24 @@ public class HttpBasedTask extends AbstractMDTTask {
 	protected void run(Map<String,Port> inputPorts, Map<String,Port> inoutPorts,
 						Map<String,Port> outputPorts, Map<String,String> options) throws Exception {
 		try {
-			OkHttpClient http = SSLUtils.newTrustAllOkHttpClientBuilder().build();
-			HttpOperationClient op = new HttpOperationClient(http, m_endpoint);
-			op.setPollInterval(m_pollInterval);
-			op.setTimeout(m_timeout);
-			
 			Map<String,Object> parameters = Maps.newHashMap();
 			FStream.from(inputPorts).mapValue(Port::getAsJsonObject).forEach(parameters::put);
 			FStream.from(inoutPorts).mapValue(Port::getAsJsonObject).forEach(parameters::put);
 			FStream.from(options).forEach(parameters::put);
 			String paramsJsonStr = AASUtils.writeJson(parameters);
 			
+			HttpOperationClient op = HttpOperationClient.builder()
+											.setHttpClient(SSLUtils.newTrustAllOkHttpClientBuilder().build())
+											.setEndpoint(m_endpoint)
+											.setRequestBodyJson(paramsJsonStr)
+											.setPollInterval(m_pollInterval)
+											.setTimeout(m_timeout)
+											.build();
+			String outputsJson = op.run();
+			
 			Map<String,Port> resultPorts = Maps.newHashMap(outputPorts);
 			resultPorts.putAll(inoutPorts);
 			
-			String outputsJson = op.run(paramsJsonStr);
 			ObjectNode top = (ObjectNode)MAPPER.readTree(outputsJson);
 			FStream.from(top.fields())
 					.forEach(ent -> update(resultPorts.get(ent.getKey()), ent.getValue()));

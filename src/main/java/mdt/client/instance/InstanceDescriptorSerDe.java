@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 import utils.InternalException;
-import utils.func.Funcs;
+import utils.func.FOption;
 import utils.stream.FStream;
 
 import mdt.model.instance.DefaultInstanceDescriptor;
@@ -111,14 +111,14 @@ public class InstanceDescriptorSerDe {
 			
 			DefaultInstanceDescriptor desc = new DefaultInstanceDescriptor();
 			desc.setId(getStringField(node, "id"));
-			desc.setStatus(Funcs.applyIfNonNull(getStringField(node, "status"), MDTInstanceStatus::valueOf));
+			desc.setStatus(FOption.map(getStringField(node, "status"), MDTInstanceStatus::valueOf));
 			desc.setEndpoint(getStringField(node, "endpoint"));
 			
 			desc.setAasId(getStringField(node, "aasId"));
 			desc.setAasIdShort(getStringField(node, "aasIdShort"));
 			desc.setGlobalAssetId(getStringField(node, "globalAssetId"));
 			desc.setAssetType(getStringField(node, "assetType"));
-			desc.setAssetKind(Funcs.applyIfNonNull(getStringField(node, "assetKind"), AssetKind::valueOf));
+			desc.setAssetKind(FOption.map(getStringField(node, "assetKind"), AssetKind::valueOf));
 			
 			ArrayNode submodelNodes = (ArrayNode)node.get("submodels");
 			desc.setSubmodels(FStream.from(submodelNodes.elements())

@@ -139,6 +139,7 @@ public class StartSimulationCommand extends MDTCommand {
 		}
 		
 		HttpSimulationClient client = new HttpSimulationClient(mdtClient.getHttpClient(), endpoint);
+		client.setLogger(getLogger());
 		
 		Instant started = Instant.now();
 		OperationStatusResponse<Void> resp = (m_useEndpoint)
@@ -154,8 +155,8 @@ public class StartSimulationCommand extends MDTCommand {
 			System.exit(0);
 		}
 		
-		String opHandle = "ProcessOptimization";
-//		String opHandle = resp.getOpHandle();
+//		String opHandle = "ProcessOptimization";
+		String opHandle = resp.getOperationLocation();
 		while ( resp.getStatus() == OperationStatus.RUNNING ) {
 			if ( m_verbose ) {
 				System.out.print(".");

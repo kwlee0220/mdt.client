@@ -6,7 +6,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 
-import utils.func.Funcs;
+import utils.func.FOption;
 
 import lombok.experimental.UtilityClass;
 import mdt.model.DataType;
@@ -28,7 +28,7 @@ public class PropertyValues {
 	
 	public static PropertyValue<?> fromDataType(DataType<?> dtype, Object initValue) {
 		if ( dtype instanceof StringType ) {
-			return new StringValue(Funcs.applyIfNonNull(initValue, v -> "" + v));
+			return new StringValue(FOption.map(initValue, v -> "" + v));
 		}
 		else if ( dtype instanceof IntegerType ) {
 			return new IntegerValue((Integer)initValue);

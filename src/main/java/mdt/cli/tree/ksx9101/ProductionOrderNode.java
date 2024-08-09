@@ -4,7 +4,7 @@ import java.util.Collections;
 
 import org.barfuin.texttree.api.Node;
 
-import utils.func.Funcs;
+import utils.func.FOption;
 
 import mdt.ksx9101.model.ProductionOrder;
 
@@ -22,7 +22,7 @@ public final class ProductionOrderNode implements Node {
 
 	@Override
 	public String getText() {
-		String uomStr = Funcs.toNonNull("" + m_plan.getItemUOMCode(), ""); 
+		String uomStr = FOption.getOrElse("" + m_plan.getItemUOMCode(), ""); 
 		return String.format("%s: 공정(%s), %s(%s%s), schedule: %s~%s",
 							m_plan.getProductionOrderID(), m_plan.getOperationID(),
 							m_plan.getItemID(), m_plan.getProductionOrderQuantity(), uomStr,

@@ -31,7 +31,7 @@ public abstract class HomeDirPicocliCommand implements Runnable, LoggerSettable 
 	
 	private final FOption<String> m_homeDirEnvVarName;
 	private Path m_homeDir = null;
-	private Logger m_logger = s_logger;
+	private Logger m_logger;
 	
 	protected abstract void run(Path homeDir) throws Exception;
 	
@@ -84,7 +84,7 @@ public abstract class HomeDirPicocliCommand implements Runnable, LoggerSettable 
 
 	@Override
 	public Logger getLogger() {
-		return m_logger;
+		return FOption.getOrElse(m_logger, s_logger);
 	}
 
 	@Override

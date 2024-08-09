@@ -5,7 +5,7 @@ import java.util.Objects;
 
 import org.barfuin.texttree.api.Node;
 
-import utils.func.Funcs;
+import utils.func.FOption;
 
 import mdt.ksx9101.model.Parameter;
 import mdt.ksx9101.model.ParameterValue;
@@ -26,11 +26,11 @@ public final class ParameterNode implements Node {
 
 	@Override
 	public String getText() {
-		String idStr = Funcs.toNonNull(m_param.getParameterName(), m_param::getParameterId);
+		String idStr = FOption.getOrElse(m_param.getParameterName(), m_param::getParameterId);
 		String slStr = ( Objects.nonNull(m_param.getLSL()) || Objects.nonNull(m_param.getUSL()) )
 					? String.format(", 공정범위: %s-%s", m_param.getLSL(), m_param.getUSL())
 					: "";
-		String paramValue = Funcs.applyIfNonNull(ParameterValue::getParameterValue, m_paramValue, "N/A");
+		String paramValue = FOption.map(m_paramValue, ParameterValue::getParameterValue, "N/A");
 		return String.format("%s (%s): %s%s", idStr, m_param.getParameterType(), paramValue, slStr);
 	}
 

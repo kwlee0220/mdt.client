@@ -7,7 +7,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
 
-import utils.func.Funcs;
+import utils.func.FOption;
 import utils.stream.FStream;
 
 import mdt.model.DataType;
@@ -106,8 +106,8 @@ public class ElementValues {
 		value.setIdShort(range.getIdShort());
 		
 		DataType<?> dtype = DataTypes.fromAas4jDatatype(range.getValueType());
-		value.setMin(Funcs.applyIfNonNull(range.getMin(), dtype::parseValueString));
-		value.setMax(Funcs.applyIfNonNull(range.getMax(), dtype::parseValueString));
+		value.setMin(FOption.map(range.getMin(), dtype::parseValueString));
+		value.setMax(FOption.map(range.getMax(), dtype::parseValueString));
 		
 		return value;
 	}

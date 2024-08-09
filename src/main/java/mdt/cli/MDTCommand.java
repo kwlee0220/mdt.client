@@ -39,7 +39,7 @@ public abstract class MDTCommand extends HomeDirPicocliCommand {
 	}
 	
 	@Option(names={"--level"}, paramLabel="level", description={"Logger level: debug, info, warn, or error"})
-	public void setLogger(String level) {
+	public void setLoggerLevel(String level) {
 		switch ( level.toLowerCase() ) {
 			case "off":
 				m_loggerLevel = Level.OFF;

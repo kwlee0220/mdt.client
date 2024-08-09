@@ -130,7 +130,7 @@ public interface MDTInstanceManager {
 	/**
 	 * 주어진 Submodel의 idShort를 포함한 모든 {@link MDTInstance} 객체를 반환한다.
 	 * 
-	 * @param submodelId	검색에 사용할 Submodel의 idShort.
+	 * @param 	submodelIdShort	검색에 사용할 Submodel의 idShort.
 	 * @return		Submodel의 idShort를 포함한 {@link MDTInstance} 객체들의 리스트.
 	 * 				만일 Submodel의 idShort를 포함한 MDT instance가 없는 경우는 empty 리스트가 반환된다.
 	 */
@@ -163,10 +163,6 @@ public interface MDTInstanceManager {
 	 * @param aasFile		등록할 asset의 AAS Environment 정보 파일 경로.
 	 * @param arguments 	Instance 구동에 필요한 argument 정보.
 	 * 						Json으로 serializable해야 함.
-	 * @param timeout		등록 소요시간 timeout.
-	 * 						등록 소요시간이 주어진 시간보다 길어지는 경우에는
-	 * 						{@link TimeoutException} 예외가 발생한다.
-	 * 						timeout 값이 <code>null</code>인 경우는 무한 대기를 의미한다.
 	 * @return 등록된 MDT Instace 객체.
 	 * @throws MDTInstanceManagerException	기타 다른 이유로 MDTInstance 등록에 실패한 경우.
 	 */

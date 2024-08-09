@@ -15,7 +15,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodelElementList;
 
 import com.google.common.collect.Lists;
 
-import utils.func.Funcs;
+import utils.func.FOption;
 
 import lombok.experimental.UtilityClass;
 
@@ -58,7 +58,7 @@ public class MDTSubmodelElementUtils {
 		try {
 			if ( value != null || anno.keepNullField() ) {
 				DataType dtype = DataTypes.fromDataTypeName(anno.valueType());
-				String propStr = Funcs.applyIfNonNull(value, dtype::toValueString); 
+				String propStr = FOption.map(value, dtype::toValueString); 
 
 				String idShort = (anno.idShort().length() > 0) ? anno.idShort() : null;
 				return new DefaultProperty.Builder()

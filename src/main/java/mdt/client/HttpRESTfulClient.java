@@ -2,14 +2,20 @@ package mdt.client;
 
 import java.io.IOException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import utils.InternalException;
+import utils.LoggerSettable;
+import utils.func.FOption;
 import utils.func.Tuple;
 
+import mdt.client.simulation.HttpSimulationClient;
 import mdt.model.MDTExceptionEntity;
 import okhttp3.Headers;
 import okhttp3.MediaType;
@@ -23,11 +29,13 @@ import okhttp3.Response;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class HttpRESTfulClient {
+public class HttpRESTfulClient implements LoggerSettable {
+	private static final Logger s_logger = LoggerFactory.getLogger(HttpSimulationClient.class);
 	private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 	
 	private final OkHttpClient m_client;
 	protected final JsonMapper m_mapper;
+	private Logger m_logger = null;
 	
 	public HttpRESTfulClient(OkHttpClient client) {
 		m_client = client;
@@ -90,6 +98,12 @@ public class HttpRESTfulClient {
 	public <T> T parseResponse(Response resp, TypeReference<T> typeRef) throws MDTClientException {
 		try {
 			String respBody = resp.body().string();
+			if ( s_logger.isDebugEnabled() ) {
+				Headers headers = resp.headers();
+				s_logger.debug("received response: code={}, headers={}, body={}",
+								resp.code(), headers, respBody);
+			}
+			
 			if ( resp.isSuccessful() ) {
 				return parseJson(respBody, typeRef);
 			}
@@ -101,6 +115,16 @@ public class HttpRESTfulClient {
 		catch ( IOException e ) {
 			throw new MDTClientException(resp.toString());
 		}
+	}
+
+	@Override
+	public Logger getLogger() {
+		return FOption.getOrElse(m_logger, s_logger);
+	}
+
+	@Override
+	public void setLogger(Logger logger) {
+		m_logger = logger;
 	}
 	
 

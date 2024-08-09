@@ -7,10 +7,12 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import utils.LoggerSettable;
+import utils.func.FOption;
+
 import mdt.client.HttpRESTfulClient;
 import mdt.client.MDTClientException;
 import okhttp3.MediaType;
-import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -20,7 +22,7 @@ import okhttp3.Response;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class HttpSimulationClient {
+public class HttpSimulationClient implements LoggerSettable {
 	private static final Logger s_logger = LoggerFactory.getLogger(HttpSimulationClient.class);
 	private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 	private static final TypeReference<OperationStatusResponse<Void>> RESPONSE_TYPE_REF
@@ -28,21 +30,21 @@ public class HttpSimulationClient {
 	
 	private final HttpRESTfulClient m_restClient;
 	private final String m_endpoint;
+	private Logger m_logger;
 	
 	public HttpSimulationClient(OkHttpClient client, String endpoint) {
 		m_restClient = new HttpRESTfulClient(client);
 		m_endpoint = endpoint;
+		
+		m_restClient.setLogger(getLogger());
 	}
 	
 	public OperationStatusResponse<Void> startSimulation(String paramtersJson) {
 		RequestBody body = RequestBody.create(paramtersJson, JSON);
-		if ( s_logger.isDebugEnabled() ) {
-			s_logger.debug("sending Simulation start request: url={}, body={}", m_endpoint, body);
-		}
-		
 		Request req = new Request.Builder().url(m_endpoint).post(body).build();
 		if ( s_logger.isDebugEnabled() ) {
-			s_logger.debug("sending: ({}) {}, body={}", req.method(), req.url(), paramtersJson);
+			s_logger.debug("sending Simulation start request: url={}, method={}, body={}",
+							m_endpoint, req.method(), paramtersJson);
 		}
 		try {
 			Response resp =  m_restClient.getHttpClient().newCall(req).execute();
@@ -69,7 +71,8 @@ public class HttpSimulationClient {
 	}
 	
 	public OperationStatusResponse<Void> statusSimulation(String simulationHandle) {
-		String url = String.format("%s/%s", m_endpoint, simulationHandle);
+		String loc = FOption.map(simulationHandle, String::trim, "");
+		String url = (loc.length() > 0) ?  String.format("%s/%s", m_endpoint, loc) : m_endpoint;
 
 		if ( s_logger.isDebugEnabled() ) {
 			s_logger.debug("sending: (GET) {}", url);
@@ -86,5 +89,16 @@ public class HttpSimulationClient {
 		}
 		Request req = new Request.Builder().url(url).delete().build();
 		return m_restClient.call(req, RESPONSE_TYPE_REF);
+	}
+
+	@Override
+	public Logger getLogger() {
+		return FOption.getOrElse(m_logger, s_logger);
+	}
+
+	@Override
+	public void setLogger(Logger logger) {
+		m_logger = logger;
+		m_restClient.setLogger(logger);
 	}
 }

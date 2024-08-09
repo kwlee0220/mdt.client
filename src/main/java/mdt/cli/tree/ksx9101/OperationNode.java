@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.barfuin.texttree.api.Node;
 
-import utils.func.Funcs;
+import utils.func.FOption;
 import utils.stream.FStream;
 
 import mdt.cli.tree.ListNode;
@@ -31,7 +31,7 @@ public final class OperationNode extends ParametricEntityNode {
 
 	@Override
 	public String getText() {
-		String nameStr = Funcs.toNonNull(m_operation.getOperationName(), m_operation.getOperationId());
+		String nameStr = FOption.getOrElse(m_operation.getOperationName(), m_operation.getOperationId());
 		return String.format("Operation (%s)", nameStr);
 	}
 	

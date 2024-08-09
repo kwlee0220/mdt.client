@@ -6,12 +6,15 @@ plugins {
 }
 
 group = 'etri'
-version = '0.9.0'
+version = '0.9.1'
 mainClassName = 'mdt.cli.MDTCommandsMain'
 
 java {
 	sourceCompatibility = JavaVersion.VERSION_17
 	targetCompatibility = JavaVersion.VERSION_17
+	
+	withSourcesJar()
+	withJavadocJar()
 }
 [compileJava,compileTestJava]*.options*.encoding = 'UTF-8'
 
@@ -66,8 +69,13 @@ task sourceJar(type: Jar) {
 	from sourceSets.main.allSource
 }
 
-task javadocJar(type: Jar) {
-	from javadoc.destinationDir
+javadoc {
+	options.encoding = 'UTF-8'
+	options.links("https://docs.oracle.com/javase/8/docs/api/")
+	options.links("https://google.github.io/guava/releases/23.0/api/docs/")
+	options.links("http://reactivex.io/RxJava/javadoc/")
+	
+	options.addStringOption('Xdoclint:none', '-quiet')
 }
 
 shadowJar {

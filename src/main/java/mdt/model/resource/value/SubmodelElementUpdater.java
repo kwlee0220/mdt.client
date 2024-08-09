@@ -8,6 +8,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
 
+import utils.func.FOption;
 import utils.func.Funcs;
 import utils.func.KeyValue;
 import utils.func.Tuple;
@@ -106,7 +107,7 @@ public class SubmodelElementUpdater {
 
 	private void updateRange(Range rg, RangeValue rgv) {
 		rg.setIdShort(rgv.getIdShort());
-		rg.setMin(Funcs.applyIfNonNull(rgv.getMin(), Object::toString));
-		rg.setMax(Funcs.applyIfNonNull(rgv.getMax(), Object::toString));
+		rg.setMin(FOption.map(rgv.getMin(), Object::toString));
+		rg.setMax(FOption.map(rgv.getMax(), Object::toString));
 	}
 }
